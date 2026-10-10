@@ -273,6 +273,10 @@ def seed_demo_dataset(db: Session) -> Dict[str, Any]:
     Clears existing demonstration items and seeds the 10 representative electronic devices.
     Ensures complete end-to-end consistency for reverse logistics decision and optimization testing.
     """
+    for prev_return in db.query(ReturnRecord).all():
+        db.delete(prev_return)
+    db.commit()
+
     created_return_ids = []
 
     for item in DEMO_DEVICES_SPEC:

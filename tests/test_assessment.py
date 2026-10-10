@@ -96,3 +96,30 @@ def test_create_valid_assessment_and_link_to_return(client):
     returns_list = client.get(f"/returns")
     target = [item for item in returns_list.json()["items"] if item["id"] == return_id][0]
     assert target["status"] == "assessed"
+
+
+def test_get_assessment_by_return_id(client):
+    """Test retrieving assessment by return ID."""
+    ret_res = client.post("/returns", json={
+        "product_id": "SKU-GET-ASM",
+        "product_name": "Test Soundbar",
+        "category": "Electronics",
+        "purchase_price": 200.0,
+        "customer_id": "CUST-99",
+        "return_reason": "No audio output",
+    })
+    return_id = ret_res.json()["id"]
+
+    client.post("/assessment", json={
+        "return_id": return_id,
+        "product_condition": "defective",
+        "defect_category": "electrical",
+        "warranty_status": "active"
+    })
+
+    get_res = client.get(f"/assessment/{return_id}")
+    assert get_res.status_code == 200
+    assert get_res.json()["return_id"] == return_id
+
+    not_found = client.get("/assessment/non_existent_ret_id")
+    assert not_found.status_code == 404

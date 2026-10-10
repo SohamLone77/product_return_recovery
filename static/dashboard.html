@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReverseLogix AI — Intelligent Product Returns &amp; Recovery Engine</title>
+  <meta name="description" content="Judge-ready operations dashboard for the Intelligent Product Returns &amp; Recovery Engine. Evaluates 10 returned devices, detects fraud and warranty eligibility, allocates 4 technician repair slots via knapsack optimization, and maximizes expected net recovery.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+
+<header class="header" id="app-header">
+  <div class="header-brand">
+    <div class="brand-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+    </div>
+    <div class="brand-text">
+      <h1 class="brand-name">ReverseLogix<span class="brand-accent">.AI</span></h1>
+      <p class="brand-tagline">Intelligent Product Returns &amp; Recovery Engine</p>
+    </div>
+  </div>
+
+  <div class="header-status">
+    <div class="currency-toggle-group">
+      <span class="currency-label">Currency:</span>
+      <button class="currency-btn active" id="btn-curr-inr" onclick="App.setCurrency('INR')" title="Display in Indian Rupees (₹)">₹ INR</button>
+      <button class="currency-btn" id="btn-curr-usd" onclick="App.setCurrency('USD')" title="Display in US Dollars ($)">$ USD</button>
+    </div>
+
+    <div class="status-cluster">
+      <div id="status-badge" class="status-badge status-loading">
+        <span class="status-dot"></span>
+        <span id="status-label">Connecting...</span>
+      </div>
+      <div class="status-meta">
+        <span id="last-updated">-</span>
+        <span id="data-source-label" class="data-source-tag" style="display:none;">SYNTHETIC DEMO</span>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="btn-seed-run" onclick="App.seedAndRun()" disabled>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Seed &amp; Optimize
+    </button>
+    <button class="btn btn-secondary" id="btn-refresh" onclick="App.refresh()" disabled>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      Refresh
+    </button>
+  </div>
+</header>
+
+<div class="app-layout">
+  <nav class="sidebar" id="sidebar">
+    <ul class="nav-list" role="tablist">
+      <li class="nav-item active" data-tab="overview" onclick="App.switchTab('overview')">
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></span>
+        <span class="nav-label">Overview</span>
+      </li>
+      <li class="nav-item" data-tab="inventory" onclick="App.switchTab('inventory')">
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></span>
+        <span class="nav-label">Inventory</span>
+        <span class="nav-badge" id="badge-inventory">10</span>
+      </li>
+      <li class="nav-item" data-tab="allocation" onclick="App.switchTab('allocation')">
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+        <span class="nav-label">Repair Slots</span>
+        <span class="nav-badge" id="badge-repair">4/4</span>
+      </li>
+      <li class="nav-item" data-tab="comparison" onclick="App.switchTab('comparison')">
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
+        <span class="nav-label">Baseline vs Opt</span>
+      </li>
+      <li class="nav-item" data-tab="charts" onclick="App.switchTab('charts')">
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></span>
+        <span class="nav-label">Analytics</span>
+      </li>
+      <li class="nav-item" data-tab="simulator" onclick="App.switchTab('simulator')">
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+        <span class="nav-label">What-If Simulator</span>
+      </li>
+      <li class="nav-item" data-tab="review-queue" onclick="App.switchTab('review-queue')">
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+        <span class="nav-label">Review Queue</span>
+        <span class="nav-badge nav-badge-alert" id="badge-review">2</span>
+      </li>
+      <li class="nav-item" data-tab="demo-guide" onclick="App.switchTab('demo-guide')">
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+        <span class="nav-label">Demo Guide</span>
+      </li>
+    </ul>
+  </nav>
+
+  <main class="main-content" id="main-content">
+
+    <!-- TAB: OVERVIEW -->
+    <section class="tab-pane active" id="tab-overview">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Operations &amp; Recovery Overview</h2>
+          <p class="section-subtitle">Real-time recovery optimization across all 10 demonstration return records</p>
+        </div>
+      </div>
+
+      <div class="kpi-grid" id="kpi-grid">
+        <div class="kpi-card kpi-primary" id="kpi-total-devices">
+          <div class="kpi-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+          <div class="kpi-value skeleton" id="kv-total-devices">-</div>
+          <div class="kpi-label">Returned Devices</div>
+          <div class="kpi-sub" id="ks-total-devices">-</div>
+        </div>
+
+        <div class="kpi-card kpi-success" id="kpi-net-recovery">
+          <div class="kpi-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+          <div class="kpi-value skeleton" id="kv-net-recovery">-</div>
+          <div class="kpi-label">Expected Net Recovery</div>
+          <div class="kpi-sub" id="ks-net-recovery">Proceeds minus all costs</div>
+        </div>
+
+        <div class="kpi-card kpi-info" id="kpi-proceeds">
+          <div class="kpi-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
+          <div class="kpi-value skeleton" id="kv-proceeds">-</div>
+          <div class="kpi-label">Expected Proceeds</div>
+          <div class="kpi-sub" id="ks-proceeds">Gross disposition value</div>
+        </div>
+
+        <div class="kpi-card kpi-cost" id="kpi-costs">
+          <div class="kpi-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+          <div class="kpi-value skeleton" id="kv-costs">-</div>
+          <div class="kpi-label">Processing &amp; Route Costs</div>
+          <div class="kpi-sub" id="ks-costs">Repair, handling &amp; test</div>
+        </div>
+
+        <div class="kpi-card kpi-warning" id="kpi-repair-slots">
+          <div class="kpi-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
+          <div class="kpi-value skeleton" id="kv-repair-slots">-</div>
+          <div class="kpi-label">Repair Slot Allocation</div>
+          <div class="kpi-sub" id="ks-repair-slots">-</div>
+        </div>
+
+        <div class="kpi-card kpi-purple" id="kpi-uplift">
+          <div class="kpi-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg></div>
+          <div class="kpi-value skeleton" id="kv-uplift">-</div>
+          <div class="kpi-label">Optimized Financial Uplift</div>
+          <div class="kpi-sub" id="ks-uplift">vs naive heuristics</div>
+        </div>
+
+        <div class="kpi-card kpi-danger" id="kpi-review">
+          <div class="kpi-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+          <div class="kpi-value skeleton" id="kv-review">-</div>
+          <div class="kpi-label">Manual Review Queue</div>
+          <div class="kpi-sub" id="ks-review">Cases held by policy guardrails</div>
+        </div>
+
+        <div class="kpi-card kpi-fraud" id="kpi-fraud">
+          <div class="kpi-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <div class="kpi-value skeleton" id="kv-fraud">-</div>
+          <div class="kpi-label">Authenticity / Risk Flags</div>
+          <div class="kpi-sub" id="ks-fraud">Counterfeit &amp; battery hazard</div>
+        </div>
+      </div>
+
+      <div class="charts-row-2">
+        <div class="card chart-card">
+          <div class="card-header">
+            <h3 class="card-title">Disposition Distribution</h3>
+            <span class="chart-src" id="chart-src-overview">live</span>
+          </div>
+          <div class="chart-container chart-donut-container">
+            <canvas id="chart-overview-donut"></canvas>
+          </div>
+        </div>
+        <div class="card chart-card">
+          <div class="card-header">
+            <h3 class="card-title">Net Recovery by Device</h3>
+            <span class="card-subtitle">Sorted by financial yield</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="chart-overview-recovery"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-4" id="overview-alloc-summary">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title">Optimised Allocation Summary</h3>
+            <p class="card-subtitle">Top recovery outcomes from current engine execution</p>
+          </div>
+          <span class="card-action" onclick="App.switchTab('allocation')">View Bench Allocation &rarr;</span>
+        </div>
+        <div id="overview-alloc-table-container">
+          <div class="empty-state" id="overview-empty">
+            <div class="empty-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+            <p>Run the optimizer to inspect allocated dispositions</p>
+            <button class="btn btn-primary" onclick="App.seedAndRun()">Seed &amp; Optimize Now</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: INVENTORY (Feature A) -->
+    <section class="tab-pane" id="tab-inventory">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Return Inventory (10 Devices)</h2>
+          <p class="section-subtitle">Granular triage data: Condition, repairability, authenticity risk, warranty status &amp; net recovery</p>
+        </div>
+        <div class="section-actions">
+          <button class="btn btn-sm btn-secondary" onclick="App.exportInventoryCSV()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
+        </div>
+      </div>
+
+      <div class="info-callout mb-3">
+        <div class="info-callout-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></div>
+        <div>
+          <strong>Core Engine Principle: Repairability &ne; Financial Desirability.</strong>
+          A device with 100% repairability (e.g. <em>Smartwatch Active 5</em>) is routed to <em>Refurbish</em> because it yields higher net recovery (+<span class="curr-sym">₹</span>160.60 vs repair), freeing bench slots for hardware with huge margins (e.g. <em>Gaming Laptop</em> +<span class="curr-sym">₹</span>923.50). Conversely, low repairability items (<em>Budget Phone A12</em>: 35%) generate negative incremental benefit and are recycled.
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <div class="search-box">
+          <span class="search-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+          <input type="text" id="inv-search" class="search-input" placeholder="Search by ID, product, defect, or category..." oninput="App.filterInventory()">
+        </div>
+        <select class="filter-select" id="inv-filter-route" onchange="App.filterInventory()">
+          <option value="">All Dispositions</option>
+          <option value="repair">Repair</option>
+          <option value="refurbish">Refurbish</option>
+          <option value="resell_secondary">Resell Secondary</option>
+          <option value="harvest_parts">Harvest Parts</option>
+          <option value="return_to_supplier">Return to Supplier</option>
+          <option value="recycle">Recycle</option>
+          <option value="dispose">Dispose</option>
+          <option value="manual_assessment">Manual Review</option>
+        </select>
+        <select class="filter-select" id="inv-filter-review" onchange="App.filterInventory()">
+          <option value="">All Review Status</option>
+          <option value="true">Held for Review</option>
+          <option value="false">Auto-Decided</option>
+        </select>
+        <select class="filter-select" id="inv-filter-repair" onchange="App.filterInventory()">
+          <option value="">All Repair Status</option>
+          <option value="true">Repair Slot Allocated</option>
+          <option value="false">Non-Repair Route</option>
+        </select>
+        <select class="filter-select" id="inv-sort" onchange="App.filterInventory()">
+          <option value="net_recovery_desc">&darr; Net Recovery</option>
+          <option value="net_recovery_asc">&uarr; Net Recovery</option>
+          <option value="incremental_benefit_desc">&darr; Incremental Repair Benefit</option>
+          <option value="repair_cost_asc">&uarr; Repair Cost</option>
+          <option value="repairability_desc">&darr; Repairability %</option>
+          <option value="confidence_desc">&darr; Confidence %</option>
+        </select>
+      </div>
+
+      <div class="card table-card">
+        <div id="inv-table-container">
+          <div class="empty-state" id="inv-empty">
+            <div class="empty-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+            <p>No devices loaded. Run Seed &amp; Optimize to populate.</p>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table" id="inv-table" style="display:none;">
+              <thead>
+                <tr>
+                  <th>Return ID</th>
+                  <th>Product Name / Category</th>
+                  <th class="text-center">Condition</th>
+                  <th class="text-center">Repairability</th>
+                  <th class="text-center">Confidence</th>
+                  <th class="text-center">Warranty</th>
+                  <th class="text-center">Authenticity</th>
+                  <th class="text-right">Repair Cost</th>
+                  <th class="text-right">Resale Value</th>
+                  <th class="text-center">Recommended Disposition</th>
+                  <th class="text-right">Expected Net</th>
+                  <th class="text-center">Bench Slot</th>
+                  <th class="text-center">Review</th>
+                  <th class="text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody id="inv-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="table-footer">
+          <span id="inv-count">Showing 0 devices</span>
+          <span class="note">Click <strong>Inspect</strong> on any device for route comparisons and evidence-based explanations.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: REPAIR SLOTS (Feature C) -->
+    <section class="tab-pane" id="tab-allocation">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Repair-Bench Capacity Allocation (K=4 Slots)</h2>
+          <p class="section-subtitle">Constrained knapsack optimization: Allocates limited bench slots exclusively by incremental repair benefit</p>
+        </div>
+        <div class="section-actions">
+          <button class="btn btn-sm btn-secondary" onclick="App.switchTab('simulator')">Test What-If Capacity &rarr;</button>
+        </div>
+      </div>
+
+      <div class="alloc-stats-grid mb-4">
+        <div class="alloc-stat-box">
+          <div class="alloc-stat-label">Total Returned Devices</div>
+          <div class="alloc-stat-val" id="alloc-stat-total">10</div>
+        </div>
+        <div class="alloc-stat-box">
+          <div class="alloc-stat-label">Available Bench Capacity</div>
+          <div class="alloc-stat-val" id="alloc-stat-cap">4 slots</div>
+        </div>
+        <div class="alloc-stat-box">
+          <div class="alloc-stat-label">Slots Utilized</div>
+          <div class="alloc-stat-val" style="color:var(--accent-primary)" id="alloc-stat-used">4 slots</div>
+        </div>
+        <div class="alloc-stat-box">
+          <div class="alloc-stat-label">Remaining Capacity</div>
+          <div class="alloc-stat-val" style="color:var(--accent-success)" id="alloc-stat-rem">0 slots</div>
+        </div>
+        <div class="alloc-stat-box">
+          <div class="alloc-stat-label">Bench Utilization</div>
+          <div class="alloc-stat-val" style="color:var(--accent-warning)" id="alloc-stat-pct">100.0%</div>
+        </div>
+      </div>
+
+      <h3 class="subsection-title">Technician Repair Bench Slots</h3>
+      <div class="bench-slots-container mb-4" id="bench-slots-visual"></div>
+
+      <div class="info-callout mb-4">
+        <div class="info-callout-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="12 8 8 12 12 16 12 8"/></svg></div>
+        <div>
+          <strong>Knapsack Selection Formula:</strong>
+          <code>Incremental Repair Benefit = Net Repair Recovery - Best Feasible Non-Repair Net Recovery</code>
+          <p class="mt-1" style="font-size:0.85rem;color:var(--text-secondary)">
+            Slots are awarded in descending order of incremental benefit. If a device has negative incremental benefit (e.g. Budget Phone at -₹33.50) or is strictly dominated by a non-repair route (e.g. Smartwatch Refurbish at +₹160.60), the optimizer will NEVER allocate a bench slot to it, even if slots are empty.
+          </p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">All Candidate Devices &amp; Allocation Ranking</h3>
+          <span class="card-subtitle">Sorted by incremental benefit over best fallback</span>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Device</th>
+                <th>Category</th>
+                <th class="text-right">Repair Net</th>
+                <th>Best Non-Repair Fallback</th>
+                <th class="text-right">Fallback Net</th>
+                <th class="text-right">Incremental Benefit</th>
+                <th class="text-center">Bench Slot Status</th>
+                <th class="text-left">Allocation Rationale</th>
+              </tr>
+            </thead>
+            <tbody id="alloc-table-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: BASELINE VS OPTIMIZED (Feature E) -->
+    <section class="tab-pane" id="tab-comparison">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Optimized vs Baseline Benchmark Comparison</h2>
+          <p class="section-subtitle">Rigorous economic proof demonstrating algorithmic recovery uplift over standard logistics heuristics</p>
+        </div>
+      </div>
+
+      <div class="comparison-grid mb-4">
+        <div class="compare-card compare-opt">
+          <div class="compare-badge">Optimized Strategy</div>
+          <h3 class="compare-title">Knapsack Net Recovery</h3>
+          <p class="compare-desc">Allocates limited repair slots to devices with highest incremental benefit over best fallback.</p>
+          <div class="compare-net-val skeleton" id="cmp-opt-net">-</div>
+          <div class="compare-stat-row">
+            <span>Repairs Selected:</span>
+            <strong id="cmp-opt-repairs">4 / 4</strong>
+          </div>
+          <div class="compare-stat-row">
+            <span>Capacity Utilisation:</span>
+            <strong id="cmp-opt-util">100.0%</strong>
+          </div>
+          <div class="compare-stat-row">
+            <span>Review Policy Guardrails:</span>
+            <strong>2 devices safely held</strong>
+          </div>
+        </div>
+
+        <div class="compare-card compare-fifo">
+          <div class="compare-badge">Standard Practice</div>
+          <h3 class="compare-title">FIFO Arrival Baseline</h3>
+          <p class="compare-desc">Repairs first 4 devices that arrive in the return intake queue without margin optimization.</p>
+          <div class="compare-net-val skeleton" id="cmp-fifo-net">-</div>
+          <div class="compare-stat-row">
+            <span>Repairs Selected:</span>
+            <strong>4 / 4</strong>
+          </div>
+          <div class="compare-stat-row">
+            <span>Optimized Uplift:</span>
+            <strong class="text-success" id="cmp-fifo-diff">-</strong>
+          </div>
+          <div class="compare-stat-row">
+            <span>Percentage Improvement:</span>
+            <strong class="text-success" id="cmp-fifo-pct">-</strong>
+          </div>
+        </div>
+
+        <div class="compare-card compare-cheapest">
+          <div class="compare-badge">Cost-Minimizing Heuristic</div>
+          <h3 class="compare-title">Cheapest-Repair First</h3>
+          <p class="compare-desc">Repairs devices with lowest direct repair costs first, ignoring resale value and alternative yields.</p>
+          <div class="compare-net-val skeleton" id="cmp-cheapest-net">-</div>
+          <div class="compare-stat-row">
+            <span>Repairs Selected:</span>
+            <strong>4 / 4</strong>
+          </div>
+          <div class="compare-stat-row">
+            <span>Optimized Uplift:</span>
+            <strong class="text-success" id="cmp-cheapest-diff">-</strong>
+          </div>
+          <div class="compare-stat-row">
+            <span>Percentage Improvement:</span>
+            <strong class="text-success" id="cmp-cheapest-pct">-</strong>
+          </div>
+        </div>
+
+        <div class="compare-card compare-upper">
+          <div class="compare-badge">Theoretical Benchmark</div>
+          <h3 class="compare-title">Unconstrained Upper Bound</h3>
+          <p class="compare-desc">Hypothetical scenario assuming infinite technician repair benches (operationally infeasible).</p>
+          <div class="compare-net-val skeleton" id="cmp-upper-net">-</div>
+          <div class="compare-stat-row">
+            <span>Repair Bench Constraints:</span>
+            <span class="badge badge-no">Infinite (Theoretical)</span>
+          </div>
+          <div class="compare-stat-row">
+            <span>Practical Feasibility:</span>
+            <span class="badge badge-review">Upper Bound Only</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-4">
+        <div class="card-header">
+          <h3 class="card-title">Strategy Comparison: Total Expected Net Recovery</h3>
+          <span class="card-subtitle">All values calculated directly by engine optimizer</span>
+        </div>
+        <div class="chart-container" style="height:320px">
+          <canvas id="chart-strategy-comparison"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Economic Optimization Rationale</h3>
+        </div>
+        <div class="card-body">
+          <p class="mb-2" id="cmp-explanation">
+            The optimization engine delivers substantial financial outperformance because it solves the combinatorial knapsack problem over opportunity costs. Naive FIFO repair blindly consumes bench slots on low-margin items. The cheapest-repair heuristic wastes slots on low-repair-cost budget items that yield trivial resale value, while leaving high-value hardware to depreciate.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: ANALYTICS & CHARTS (Feature D) -->
+    <section class="tab-pane" id="tab-charts">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Financial &amp; Operational Visualizations</h2>
+          <p class="section-subtitle">Real-time analytical charts derived from live optimizer response data</p>
+        </div>
+      </div>
+
+      <div class="charts-dashboard-grid">
+        <div class="card chart-card">
+          <div class="card-header">
+            <div><h3 class="card-title">A. Disposition Distribution</h3><p class="card-subtitle">Count of devices assigned to each final route</p></div>
+            <span class="chart-src">live</span>
+          </div>
+          <div class="chart-container chart-donut-container"><canvas id="chart-disposition"></canvas></div>
+        </div>
+
+        <div class="card chart-card">
+          <div class="card-header">
+            <div><h3 class="card-title">B. Net Recovery by Device</h3><p class="card-subtitle">Sorted by financial yield across 10 devices</p></div>
+            <span class="chart-src">live</span>
+          </div>
+          <div class="chart-container"><canvas id="chart-net-recovery"></canvas></div>
+        </div>
+
+        <div class="card chart-card">
+          <div class="card-header">
+            <div><h3 class="card-title">C. Selected Route vs Best Non-Repair Fallback</h3><p class="card-subtitle">Compares selected net recovery against opportunity fallback</p></div>
+            <span class="chart-src">live</span>
+          </div>
+          <div class="chart-container"><canvas id="chart-route-comparison"></canvas></div>
+        </div>
+
+        <div class="card chart-card">
+          <div class="card-header">
+            <div><h3 class="card-title">D. Expected Proceeds vs Operational Costs</h3><p class="card-subtitle">Gross proceeds vs processing costs by device</p></div>
+            <span class="chart-src">live</span>
+          </div>
+          <div class="chart-container"><canvas id="chart-cost-proceeds"></canvas></div>
+        </div>
+
+        <div class="card chart-card">
+          <div class="card-header">
+            <div><h3 class="card-title">E. Incremental Benefit &amp; Bench Cutoff</h3><p class="card-subtitle">Incremental benefit over fallback (Top 4 awarded slots)</p></div>
+            <span class="chart-src">live</span>
+          </div>
+          <div class="chart-container"><canvas id="chart-repair-slots"></canvas></div>
+        </div>
+
+        <div class="card chart-card">
+          <div class="card-header">
+            <div><h3 class="card-title">F. Risk, Authenticity &amp; Warranty Overview</h3><p class="card-subtitle">Safety hazards, counterfeit signals, and clean cases</p></div>
+            <span class="chart-src">live</span>
+          </div>
+          <div class="chart-container chart-donut-container"><canvas id="chart-risk-overview"></canvas></div>
+          <div class="risk-legend" id="risk-legend"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: WHAT-IF SIMULATOR (Feature F) -->
+    <section class="tab-pane" id="tab-simulator">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Live What-If Scenario Simulator</h2>
+          <p class="section-subtitle">Dynamically stress-test repair capacity constraints, parts inflation, and market price shocks</p>
+        </div>
+      </div>
+
+      <div class="card mb-4">
+        <div class="card-header">
+          <h3 class="card-title">Scenario Parameters</h3>
+          <span class="card-subtitle">Adjust parameters to re-run optimization without modifying production records</span>
+        </div>
+        <div class="card-body">
+          <div class="sim-controls-grid">
+            <div class="sim-control-item">
+              <div class="sim-control-header">
+                <label for="sim-capacity-slider">Repair Bench Capacity (Slots)</label>
+                <span class="sim-val-badge" id="sim-cap-display">4 slots</span>
+              </div>
+              <input type="range" id="sim-capacity-slider" class="sim-slider" min="0" max="10" value="4" step="1" oninput="App.updateSimCapacityDisplay()">
+              <div class="sim-slider-marks"><span>0</span><span>2</span><span>4 (Prod)</span><span>6</span><span>8</span><span>10</span></div>
+            </div>
+
+            <div class="sim-control-item">
+              <div class="sim-control-header">
+                <label for="sim-cost-slider">Repair Cost Multiplier (Labor &amp; Parts Inflation)</label>
+                <span class="sim-val-badge" id="sim-cost-display">1.0x (Baseline)</span>
+              </div>
+              <input type="range" id="sim-cost-slider" class="sim-slider" min="0.5" max="2.0" value="1.0" step="0.1" oninput="App.updateSimCostDisplay()">
+              <div class="sim-slider-marks"><span>0.5x (-50%)</span><span>1.0x</span><span>1.5x (+50%)</span><span>2.0x (+100%)</span></div>
+            </div>
+
+            <div class="sim-control-item">
+              <div class="sim-control-header">
+                <label for="sim-resale-slider">Resale Value Multiplier (Secondary Market Pricing)</label>
+                <span class="sim-val-badge" id="sim-resale-display">1.0x (Baseline)</span>
+              </div>
+              <input type="range" id="sim-resale-slider" class="sim-slider" min="0.5" max="1.5" value="1.0" step="0.05" oninput="App.updateSimResaleDisplay()">
+              <div class="sim-slider-marks"><span>0.5x (-50%)</span><span>0.75x</span><span>1.0x</span><span>1.25x</span><span>1.5x (+50%)</span></div>
+            </div>
+          </div>
+
+          <div class="sim-actions mt-3">
+            <button class="btn btn-primary" onclick="App.runScenario()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Run Scenario Simulation
+            </button>
+            <button class="btn btn-secondary" onclick="App.resetSimulator()">Reset to Production (K=4)</button>
+            <button class="btn btn-secondary btn-sm" onclick="App.setScenarioCapacity(2)">Preset: Constrained K=2</button>
+            <button class="btn btn-secondary btn-sm" onclick="App.setScenarioCapacity(1)">Preset: Crisis K=1</button>
+            <button class="btn btn-secondary btn-sm" onclick="App.setScenarioCapacity(6)">Preset: Expanded K=6</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sim-outcome-grid mb-4" id="sim-outcome-panel" style="display:none;">
+        <div class="sim-metric-card">
+          <div class="sim-metric-label">Scenario Net Recovery</div>
+          <div class="sim-metric-val" id="sim-res-net">-</div>
+          <div class="sim-metric-sub" id="sim-res-diff">-</div>
+        </div>
+        <div class="sim-metric-card">
+          <div class="sim-metric-label">Repair Slots Utilized</div>
+          <div class="sim-metric-val" id="sim-res-slots">-</div>
+          <div class="sim-metric-sub" id="sim-res-util">-</div>
+        </div>
+        <div class="sim-metric-card">
+          <div class="sim-metric-label">Allocations Changed</div>
+          <div class="sim-metric-val text-warning" id="sim-res-changed">-</div>
+          <div class="sim-metric-sub">Devices re-routed under new constraint</div>
+        </div>
+      </div>
+
+      <div class="card" id="sim-diff-card" style="display:none;">
+        <div class="card-header">
+          <h3 class="card-title">Allocation Shift &amp; Re-Routing Diff</h3>
+          <span class="card-subtitle">Shows exactly how device dispositions change between baseline and scenario</span>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Device</th>
+                <th>Baseline Route (K=4)</th>
+                <th>Scenario Route</th>
+                <th>Status</th>
+                <th class="text-right">Baseline Net</th>
+                <th class="text-right">Scenario Net</th>
+                <th class="text-right">Financial Delta</th>
+                <th>Economic Shift Rationale</th>
+              </tr>
+            </thead>
+            <tbody id="sim-diff-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: MANUAL-REVIEW QUEUE (Feature G) -->
+    <section class="tab-pane" id="tab-review-queue">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Manual Technical &amp; Fraud Review Queue</h2>
+          <p class="section-subtitle">2 returns flagged by policy guardrails (Lithium thermal hazard &amp; suspected counterfeit)</p>
+        </div>
+      </div>
+
+      <div class="alert-box alert-warning mb-4">
+        <div class="alert-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+        <div>
+          <strong>Automated Routing Blocked by Policy Guardrails.</strong>
+          The decision engine strictly halts automatic routing whenever authenticity risk exceeds 70% or physical safety hazards (swollen batteries) are detected. These items must be physically verified by a senior technician or legal specialist before disposition.
+        </div>
+      </div>
+
+      <div class="review-cards-list mb-4" id="review-cards-container"></div>
+
+      <div class="card">
+        <div class="card-header"><h3 class="card-title">Standard Operating Procedure for Flagged Returns</h3></div>
+        <div class="card-body">
+          <div class="workflow-steps-horizontal">
+            <div class="workflow-step-card"><div class="step-badge">1</div><h4>Physical Isolation</h4><p>Hazmat devices must be quarantined in thermal fireproof containers. Counterfeits placed in secure custody.</p></div>
+            <div class="workflow-step-card"><div class="step-badge">2</div><h4>Evidence Verification</h4><p>Cross-reference OEM serial numbers and inspect warranty invoices against authorized partner databases.</p></div>
+            <div class="workflow-step-card"><div class="step-badge">3</div><h4>Assessment Update</h4><p>Technician records verified findings via <code>POST /assessment</code>, unblocking automated engine valuation.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: DEVICE DETAIL (Feature B) -->
+    <section class="tab-pane" id="tab-device-detail">
+      <div class="section-header">
+        <div>
+          <button class="btn btn-secondary btn-sm mb-2" onclick="App.closeDeviceDetail()">&larr; Back to Return Inventory</button>
+          <h2 class="section-title" id="detail-title">Device Detail &amp; Decision Explanation</h2>
+          <p class="section-subtitle" id="detail-subtitle">-</p>
+        </div>
+      </div>
+      <div id="device-detail-content"><div class="empty-state"><p>Select a device from the inventory.</p></div></div>
+    </section>
+
+    <!-- TAB: DEMO GUIDE (Feature H) -->
+    <section class="tab-pane" id="tab-demo-guide">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Hackathon Judge Demo Guide</h2>
+          <p class="section-subtitle">Interactive 8-step walkthrough demonstrating the full end-to-end recovery engine experience</p>
+        </div>
+      </div>
+
+      <div class="demo-steps-grid">
+        <div class="demo-step-card">
+          <div class="demo-step-header"><span class="step-chip">Step 1</span><h4>Seed &amp; Load 10 Returned Devices</h4></div>
+          <p>Populate the database with the 10 canonical devices exhibiting diverse defects, warranties, and risks.</p>
+          <button class="btn btn-primary btn-sm" onclick="App.seedAndRun()">Run Step 1 (Seed &amp; Optimize)</button>
+        </div>
+        <div class="demo-step-card">
+          <div class="demo-step-header"><span class="step-chip">Step 2</span><h4>Inspect Return Inventory &amp; Triage</h4></div>
+          <p>Observe condition grades, repairability percentages, authenticity scores, and warranty eligibility across devices.</p>
+          <button class="btn btn-secondary btn-sm" onclick="App.switchTab('inventory')">Open Inventory Tab</button>
+        </div>
+        <div class="demo-step-card">
+          <div class="demo-step-header"><span class="step-chip">Step 3</span><h4>Deep-Dive Single Device Economics</h4></div>
+          <p>Open <em>Flagship Smartphone 15 Pro</em>. Inspect all 7 alternative routes, feasibility reasons, and evidence-based explanation.</p>
+          <button class="btn btn-secondary btn-sm" onclick="App.openFirstDeviceDetail()">Inspect Smartphone 15 Pro</button>
+        </div>
+        <div class="demo-step-card">
+          <div class="demo-step-header"><span class="step-chip">Step 4</span><h4>Review Repair-Slot Knapsack (K=4)</h4></div>
+          <p>Verify that 4 slots are awarded strictly by incremental repair benefit over the best non-repair fallback.</p>
+          <button class="btn btn-secondary btn-sm" onclick="App.switchTab('allocation')">Open Repair Slots Tab</button>
+        </div>
+        <div class="demo-step-card">
+          <div class="demo-step-header"><span class="step-chip">Step 5</span><h4>Evaluate Uplift vs Baseline Heuristics</h4></div>
+          <p>Verify rigorous economic uplift over FIFO arrival order and Cheapest-Repair-First heuristics without invented data.</p>
+          <button class="btn btn-secondary btn-sm" onclick="App.switchTab('comparison')">Open Baseline vs Opt</button>
+        </div>
+        <div class="demo-step-card">
+          <div class="demo-step-header"><span class="step-chip">Step 6</span><h4>What-If Simulator: Cut Capacity to K=2</h4></div>
+          <p>Tighter capacity forces the engine to demote Tablet and TV to fallback routes, recalculating aggregate net recovery.</p>
+          <button class="btn btn-secondary btn-sm" onclick="App.runPresetK2()">Simulate K=2 Constraint</button>
+        </div>
+        <div class="demo-step-card">
+          <div class="demo-step-header"><span class="step-chip">Step 7</span><h4>Investigate Manual-Review Queue</h4></div>
+          <p>Inspect the 2 held returns (Counterfeit Earbuds and Swollen Lithium Laptop) and test interactive review verification.</p>
+          <button class="btn btn-secondary btn-sm" onclick="App.switchTab('review-queue')">Open Review Queue</button>
+        </div>
+        <div class="demo-step-card">
+          <div class="demo-step-header"><span class="step-chip">Step 8</span><h4>Review Operational Analytics Charts</h4></div>
+          <p>Inspect all 6 live Chart.js visualizations (Disposition, Net Recovery, Route Comparison, Costs vs Proceeds, Bench Cutoff, Risk).</p>
+          <button class="btn btn-secondary btn-sm" onclick="App.switchTab('charts')">Open Analytics Tab</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="loading-overlay" id="loading-overlay" style="display:none;">
+  <div class="loading-box">
+    <div class="loading-spinner"></div>
+    <p class="loading-msg" id="loading-msg">Running optimizer...</p>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script type="module" src="/static/js/dashboard.js"></script>
+</body>
+</html>

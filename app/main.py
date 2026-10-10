@@ -81,7 +81,11 @@ def health_check():
 
 @app.get("/", tags=["Dashboard"])
 def serve_dashboard():
-    """Serves the Interactive ReverseLogix AI Web Dashboard."""
+    """Serves the ReverseLogix AI judge-ready demonstration dashboard."""
+    dashboard_path = os.path.join(static_dir, "dashboard.html")
+    if os.path.exists(dashboard_path):
+        return FileResponse(dashboard_path)
+    # Fallback to legacy index.html
     index_path = os.path.join(static_dir, "index.html")
     if os.path.exists(index_path):
         return FileResponse(index_path)
@@ -93,4 +97,13 @@ def serve_dashboard():
 
 @app.get("/dashboard", tags=["Dashboard"])
 def dashboard_alias():
+    """Alias for the main dashboard."""
     return serve_dashboard()
+
+@app.get("/legacy", tags=["Dashboard"])
+def serve_legacy():
+    """Serves the original index.html for backwards compatibility."""
+    index_path = os.path.join(static_dir, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    return {"detail": "Legacy dashboard not found."}
