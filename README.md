@@ -1,16 +1,37 @@
-# Intelligent Product Returns & Recovery Engine — Backend Service
+# Intelligent Product Returns & Recovery Engine — Reverse Logistics & Optimization
 
-High-performance, explainable REST API backend for managing product returns, physical assessments, net recovery route optimization, and operational analytics.
+High-performance, explainable REST API backend and reverse logistics decision engine for managing product returns, condition assessments, probabilistic repair modeling, and capacity-constrained batch optimization.
 
 ---
 
-## 🚀 Key Features
+## 🚀 Key Reverse Logistics Capabilities
 
-1. **Return Intake (`POST /returns`, `GET /returns`):** Validated ingestion with UUID tracking, status lifecycle, pagination, and multi-criteria filtering.
-2. **Assessment Logging (`POST /assessment`):** Granular intake for condition, defect categories, verified vs. user-reported warranty status, and fraud risk detection.
-3. **Deterministic Decision Engine (`POST /decision`):** Multi-route expected net recovery optimization across 9 disposition paths with explainable reason codes.
-4. **Operations & Financial Analytics (`GET /analytics`):** Real-time deduplicated metrics for conditions, warranties, disposition actions, and net recovery totals.
-5. **Interactive API Specs:** Auto-generated OpenAPI / Swagger UI at `/docs` and ReDoc at `/redoc`.
+1. **Probabilistic Economic Decision Engine (`POST /decision`):**
+   - Evaluates all 7 disposition routes: Restock, Repair, Refurbish, Return to Supplier, Harvest Parts, Recycle, Dispose.
+   - Computes expected net recovery:
+     $$\text{Expected Net Repair Recovery} = p_{success} \times V_{success} + (1 - p_{success}) \times C_{failure} - C_{repair} - C_{test} - C_{logistics} - C_{liability}$$
+   - Calculates **Incremental Repair Benefit** over best non-repair fallback.
+   - Enforces policy guardrails for safety hazards (e.g. swollen lithium batteries) and counterfeit risks.
+
+2. **Batch Capacity Optimizer (`POST /optimize`):**
+   - Solves the reverse logistics knapsack problem for $N$ devices across $K$ technician bench slots (default: 4 slots).
+   - Allocates slots exclusively to devices with positive incremental benefit ($\Delta > 0$).
+   - Avoids wasteful naive strategies: leaves slots open if repairs are economically unattractive.
+   - Computes rigorous financial uplifts against **FIFO (Arrival-Order)** and **Cheapest-Repair** baselines.
+
+3. **Demonstration Dataset (`POST /demo/seed`, `GET /demo/dataset`):**
+   - Pre-configured 10 synthetic electronic devices showcasing diverse real-world edge cases:
+     - Devices with strong positive repair incremental benefits.
+     - Devices where repair is feasible but economically unattractive.
+     - Units where cosmetic refurbishment beats repair.
+     - Structural write-offs where modular parts harvesting beats scrap recycling.
+     - Units where verified manufacturer warranty claim beats internal rework.
+     - Policy escalations for counterfeit detection and swollen lithium batteries.
+
+4. **Intake, Assessments, & Analytics:**
+   - Validated return creation (`POST /returns`, `GET /returns`).
+   - Technical physical assessments (`POST /assessment`).
+   - Executive operational analytics (`GET /analytics`).
 
 ---
 
@@ -21,70 +42,44 @@ High-performance, explainable REST API backend for managing product returns, phy
 - **Validation & Schemas:** Pydantic v2
 - **Persistence Layer:** SQLAlchemy 2.0 (SQLite by default; supports PostgreSQL / MySQL)
 - **ASGI Server:** Uvicorn
-- **Testing:** Pytest with HTTPX TestClient
+- **Testing:** Pytest with HTTPX TestClient (22 automated test suites)
 
 ---
 
 ## 📦 Setup & Installation
 
-### 1. Install Dependencies
 ```bash
 pip install -r requirements.txt
-```
-
-### 2. Environment Configuration
-Copy `.env.example` to `.env`:
-```bash
 cp .env.example .env
-```
-
-Default settings:
-```ini
-APP_ENV=development
-APP_HOST=0.0.0.0
-APP_PORT=8000
-DATABASE_URL=sqlite:///./returns.db
-LOG_LEVEL=INFO
-DEBUG=True
 ```
 
 ---
 
-## 🏃 Running the Backend Server
+## 🏃 Running the Application
 
-Start the development server with live reload:
+Start the local server:
 ```bash
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-Once started:
-- API Root: `http://localhost:8000`
-- Interactive Swagger UI: `http://localhost:8000/docs`
-- ReDoc Documentation: `http://localhost:8000/redoc`
+Interactive documentation:
+- Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
+- ReDoc: [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
 ---
 
-## 🧪 Running Automated Tests
+## 🧪 Demonstration & Testing
 
-Run the full Pytest test suite:
+Run all 22 automated tests:
 ```bash
 python -m pytest -v
 ```
 
-All 14 tests verify:
-- Valid return creation and persistence
-- Schema validation & invalid payload rejection
-- Pagination and category filtering
-- Foreign key integrity & 404 handling on invalid return IDs
-- Decision engine formulas (`Net Recovery = Recovered Value - Costs`)
-- Ambiguous data and fraud flagging (`manual_assessment`)
-- Analytics accuracy and deduplication
-- Persistence across application restarts
-- Safe 500 error sanitization without stack trace leakage
+Seed the 10 demonstration devices and run the batch optimizer via curl / API:
+```bash
+# 1. Seed the 10 synthetic devices
+curl -X POST http://localhost:8000/demo/seed
 
----
-
-## 🤝 Team Coordination & Integrations
-
-- **Person 2 (Return Assessment Module):** Send `POST /assessment` payloads with physical condition, defect classification, and warranty eligibility.
-- **Dashboard Developer:** Connect to `GET /returns` for return queues, `POST /decision` for recommendation cards, and `GET /analytics` for operational charts and financial metrics.
+# 2. Run the 4-slot batch optimizer
+curl -X POST http://localhost:8000/optimize -H "Content-Type: application/json" -d '{"repair_capacity_slots": 4}'
+```

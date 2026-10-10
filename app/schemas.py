@@ -79,6 +79,15 @@ class AssessmentCreate(BaseModel):
     fraud_flags: Optional[List[str]] = Field(default=None, description="Identified fraud signals or anomaly codes")
     assessor_notes: Optional[str] = Field(default=None, description="Internal notes from inspecting technician")
 
+    # Reverse Logistics attributes
+    repair_probability: Optional[float] = Field(default=None, ge=0.0, le=1.0, description="Estimated chance of successful repair p_success")
+    estimated_repair_cost: Optional[float] = Field(default=None, ge=0.0, description="Direct repair parts & labor estimate")
+    estimated_repair_hours: Optional[float] = Field(default=None, ge=0.0, description="Estimated technician bench hours")
+    potential_resale_value: Optional[float] = Field(default=None, ge=0.0, description="Projected resale proceeds V_success")
+    parts_recovery_value: Optional[float] = Field(default=None, ge=0.0, description="Reusable component salvage value")
+    authenticity_risk: Optional[float] = Field(default=None, ge=0.0, le=1.0, description="Counterfeit or clone risk score")
+    safety_hazard: bool = Field(default=False, description="Flag for safety hazards like swollen lithium batteries")
+
     @field_validator("product_condition")
     @classmethod
     def validate_condition(cls, v: str) -> str:
@@ -120,6 +129,13 @@ class AssessmentResponse(BaseModel):
     fraud_risk_score: Optional[float]
     fraud_flags: Optional[List[str]]
     assessor_notes: Optional[str]
+    repair_probability: Optional[float]
+    estimated_repair_cost: Optional[float]
+    estimated_repair_hours: Optional[float]
+    potential_resale_value: Optional[float]
+    parts_recovery_value: Optional[float]
+    authenticity_risk: Optional[float]
+    safety_hazard: bool
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -145,6 +161,7 @@ class DecisionResponse(BaseModel):
     id: str
     return_id: str
     recommended_action: str
+    recommended_route: Optional[str] = None
     expected_recovered_value: float
     estimated_costs: float
     expected_net_recovery: float
@@ -153,8 +170,67 @@ class DecisionResponse(BaseModel):
     reason_codes: List[str]
     explanation: str
     manual_review_required: bool
-    flags: List[str]
-    capacity_notes: Optional[str]
+    manual_review_reasons: List[str] = Field(default_factory=list)
+    flags: List[str] = Field(default_factory=list)
+    capacity_notes: Optional[str] = None
+
+    # Reverse Logistics Decision Engine Metrics
+    best_non_repair_route: Optional[str] = None
+    best_non_repair_net_recovery: Optional[float] = None
+    repair_incremental_benefit: Optional[float] = None
+    incremental_value_vs_next_best_route: Optional[float] = None
+    confidence_score: Optional[float] = None
+    assumptions: List[str] = Field(default_factory=list)
+    operational_reasons: Optional[str] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# --- Batch Optimization Schemas ---
+class OptimizeRequest(BaseModel):
+    return_ids: Optional[List[str]] = Field(default=None, description="Specific return IDs to optimize. If omitted, optimizes all available returns.")
+    repair_capacity_slots: int = Field(default=4, ge=0, description="Available technician repair bench slots")
+    max_repair_hours: Optional[float] = Field(default=None, ge=0.0, description="Optional technician hours budget")
+    custom_costs: Optional[Dict[str, float]] = Field(default=None, description="Custom route cost overrides")
+
+
+class DeviceAllocation(BaseModel):
+    return_id: str
+    product_name: str
+    category: str
+    assigned_route: str
+    expected_proceeds: float
+    expected_cost: float
+    expected_net_recovery: float
+    was_repair_selected: bool
+    repair_feasible: bool
+    repair_incremental_benefit: float
+    best_non_repair_route: str
+    best_non_repair_net_recovery: float
+    repair_hours: float
+    manual_review_required: bool
+    manual_review_reasons: List[str]
+    allocation_rationale: str
+
+
+class OptimizeResponse(BaseModel):
+    run_id: str
+    total_devices_evaluated: int
+    repair_capacity_slots: int
+    repair_slots_used: int
+    capacity_utilization_pct: float
+    optimized_total_net_recovery: float
+    baseline_unconstrained_net_recovery: float
+    baseline_fifo_net_recovery: float
+    baseline_cheapest_repair_net_recovery: float
+    dollar_uplift_vs_fifo: float
+    pct_uplift_vs_fifo: float
+    dollar_uplift_vs_cheapest: float
+    pct_uplift_vs_cheapest: float
+    allocations: List[DeviceAllocation]
+    batch_explanation: str
+    comparison_summary: Dict[str, Any]
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -173,3 +249,11 @@ class AnalyticsResponse(BaseModel):
     fraud_risk_flag_count: int
     records_with_complete_economic_data: int
     accounting_notes: str
+
+
+# --- Demo Dataset Schemas ---
+class DemoSeedResponse(BaseModel):
+    message: str
+    seeded_count: int
+    return_ids: List[str]
+    repair_capacity_slots: int

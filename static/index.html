@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReverseLogix AI — Intelligent Returns & Recovery Engine</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+        <div class="nav-brand">
+            <div class="logo-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+            </div>
+            <div>
+                <span class="brand-title">ReverseLogix<span class="gradient-text">.AI</span></span>
+                <span class="brand-subtitle">Intelligent Product Returns & Recovery Engine</span>
+            </div>
+        </div>
+        <div class="nav-actions">
+            <div class="status-indicator">
+                <span class="status-pulse"></span>
+                <span>Engine Active • Port 8000</span>
+            </div>
+            <button class="btn btn-secondary" id="btn-seed-demo">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                Seed 10 Demo Devices
+            </button>
+            <button class="btn btn-primary" id="btn-open-intake">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                New Return Intake
+            </button>
+            <a href="/docs" target="_blank" class="btn btn-ghost" title="Interactive API Docs">
+                API Docs
+            </a>
+        </div>
+    </header>
+
+    <main class="dashboard-container">
+        <!-- Executive KPI Banner -->
+        <section class="kpi-grid">
+            <div class="kpi-card glow-card">
+                <div class="kpi-header">
+                    <span class="kpi-label">Total Expected Net Recovery</span>
+                    <span class="kpi-badge badge-success" id="kpi-uplift-badge">+44.8% Uplift</span>
+                </div>
+                <div class="kpi-value-row">
+                    <span class="kpi-currency">$</span>
+                    <span class="kpi-number" id="kpi-net-recovery">0.00</span>
+                </div>
+                <div class="kpi-footnote" id="kpi-baseline-footnote">
+                    vs Naive Cheapest-Repair baseline
+                </div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-label">Bench Capacity Allocation</span>
+                    <span class="kpi-badge badge-primary" id="kpi-cap-util">100% Utilized</span>
+                </div>
+                <div class="kpi-value-row">
+                    <span class="kpi-number" id="kpi-slots-used">4</span>
+                    <span class="kpi-divider">/</span>
+                    <span class="kpi-subnumber" id="kpi-slots-total">4</span>
+                    <span class="kpi-unit">Slots</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" id="kpi-progress-fill" style="width: 100%;"></div>
+                </div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-label">Evaluated Returns Queue</span>
+                    <span class="kpi-badge badge-neutral" id="kpi-total-badge">Real-Time</span>
+                </div>
+                <div class="kpi-value-row">
+                    <span class="kpi-number" id="kpi-total-devices">0</span>
+                    <span class="kpi-unit">Devices</span>
+                </div>
+                <div class="kpi-footnote">
+                    Active across 7 disposition routes
+                </div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-label">Manual Review & Guardrails</span>
+                    <span class="kpi-badge badge-warning" id="kpi-review-badge">Policy Guard</span>
+                </div>
+                <div class="kpi-value-row">
+                    <span class="kpi-number" id="kpi-manual-count">0</span>
+                    <span class="kpi-unit">Escalations</span>
+                </div>
+                <div class="kpi-footnote">
+                    Lithium hazards & counterfeit detection
+                </div>
+            </div>
+        </section>
+
+        <!-- Batch Optimizer Controller Panel -->
+        <section class="optimizer-panel">
+            <div class="optimizer-header">
+                <div>
+                    <h2 class="section-title">Batch Repair Capacity Optimizer</h2>
+                    <p class="section-subtitle">Solves the reverse logistics knapsack problem by allocating bench slots to maximum incremental recovery devices.</p>
+                </div>
+                <div class="optimizer-controls">
+                    <div class="capacity-selector">
+                        <label for="capacity-input">Bench Slots ($K$):</label>
+                        <div class="stepper">
+                            <button id="cap-dec">-</button>
+                            <input type="number" id="capacity-input" value="4" min="0" max="10">
+                            <button id="cap-inc">+</button>
+                        </div>
+                    </div>
+                    <button class="btn btn-accent" id="btn-run-optimizer">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                        Run Batch Optimizer
+                    </button>
+                </div>
+            </div>
+
+            <!-- Baseline Comparison Cards -->
+            <div class="comparison-grid">
+                <div class="comparison-card highlight-card">
+                    <div class="comp-title">Optimized Allocation</div>
+                    <div class="comp-val" id="comp-opt-val">$0.00</div>
+                    <div class="comp-desc">Maximizes incremental recovery over best non-repair fallback.</div>
+                </div>
+                <div class="comparison-card">
+                    <div class="comp-title">FIFO Arrival Baseline</div>
+                    <div class="comp-val text-muted" id="comp-fifo-val">$0.00</div>
+                    <div class="comp-delta text-success" id="comp-fifo-delta">+$0.00 (+0.0%)</div>
+                    <div class="comp-desc">Repairs devices in order received until slots exhaust.</div>
+                </div>
+                <div class="comparison-card">
+                    <div class="comp-title">Cheapest-Repair Baseline</div>
+                    <div class="comp-val text-muted" id="comp-cheap-val">$0.00</div>
+                    <div class="comp-delta text-success" id="comp-cheap-delta">+$0.00 (+0.0%)</div>
+                    <div class="comp-desc">Repairs lowest-cost units first (wastes capacity on low-value items).</div>
+                </div>
+                <div class="comparison-card">
+                    <div class="comp-title">Unconstrained Upper Bound</div>
+                    <div class="comp-val text-info" id="comp-uncon-val">$0.00</div>
+                    <div class="comp-desc">Theoretical recovery assuming infinite technician bench capacity.</div>
+                </div>
+            </div>
+
+            <div class="rationale-box" id="optimizer-rationale">
+                Awaiting batch execution. Click "Seed 10 Demo Devices" and "Run Batch Optimizer" to view live allocation mechanics.
+            </div>
+        </section>
+
+        <!-- Devices & Dispositions Queue -->
+        <section class="queue-panel">
+            <div class="queue-header">
+                <div>
+                    <h2 class="section-title">Disposition & Allocation Queue</h2>
+                    <p class="section-subtitle">Real-time status of all evaluated returned hardware with route-level unit economics.</p>
+                </div>
+                <div class="queue-filters">
+                    <button class="filter-tab active" data-filter="all">All Devices</button>
+                    <button class="filter-tab" data-filter="repair">Repair Bench (<span id="count-repair">0</span>)</button>
+                    <button class="filter-tab" data-filter="non-repair">Non-Repair Recovery (<span id="count-nonrepair">0</span>)</button>
+                    <button class="filter-tab" data-filter="review">Manual Review (<span id="count-review">0</span>)</button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Device & Specifications</th>
+                            <th>Category</th>
+                            <th>Purchase Price</th>
+                            <th>Assigned Route</th>
+                            <th>Expected Proceeds</th>
+                            <th>Route Costs</th>
+                            <th>Net Recovery</th>
+                            <th>Repair Incr Benefit</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="devices-table-body">
+                        <tr>
+                            <td colspan="9" class="loading-cell">Loading returns and decisions...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal: Device Breakdown Dialog -->
+    <div class="modal-backdrop" id="device-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" id="modal-device-title">Device Allocation Breakdown</h3>
+                    <div class="modal-id" id="modal-device-id">RET-XXXX</div>
+                </div>
+                <button class="modal-close" id="btn-close-modal">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-body-content">
+                <!-- Injected via JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: New Return Intake -->
+    <div class="modal-backdrop" id="intake-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title">New Return Intake & Assessment</h3>
+                <button class="modal-close" id="btn-close-intake">&times;</button>
+            </div>
+            <form id="intake-form" class="intake-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Product SKU / ID</label>
+                        <input type="text" id="intake-product-id" required placeholder="e.g. SKU-MACBOOK-M3">
+                    </div>
+                    <div class="form-group">
+                        <label>Product Title</label>
+                        <input type="text" id="intake-product-name" required placeholder="e.g. MacBook Pro 14 M3 Pro">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select id="intake-category">
+                            <option value="Electronics">Electronics</option>
+                            <option value="Computers">Computers</option>
+                            <option value="Appliances">Appliances</option>
+                            <option value="Accessories">Accessories</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Purchase Price ($)</label>
+                        <input type="number" id="intake-price" step="0.01" min="0" required placeholder="1299.00">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Customer Return Reason</label>
+                    <input type="text" id="intake-reason" required placeholder="e.g. Trackpad click unresponsive">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Product Condition Grade</label>
+                        <select id="intake-condition">
+                            <option value="minor_damage">Minor Damage</option>
+                            <option value="unopened">Unopened (Factory Sealed)</option>
+                            <option value="like_new">Like New</option>
+                            <option value="defective">Defective</option>
+                            <option value="major_damage">Major Structural Damage</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Defect Category</label>
+                        <select id="intake-defect-cat">
+                            <option value="functional">Functional Defect</option>
+                            <option value="none">None (Zero Defects)</option>
+                            <option value="cosmetic">Cosmetic Wear</option>
+                            <option value="electrical">Electrical Component Failure</option>
+                            <option value="missing_parts">Missing Accessories</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Repair Success Probability (p_success)</label>
+                        <input type="number" id="intake-prob" step="0.05" min="0" max="1" value="0.90">
+                    </div>
+                    <div class="form-group">
+                        <label>Estimated Repair Cost ($)</label>
+                        <input type="number" id="intake-repair-cost" step="1" min="0" value="120">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Target Resale Value ($)</label>
+                        <input type="number" id="intake-resale" step="10" min="0" value="950">
+                    </div>
+                    <div class="form-group">
+                        <label>Modular Parts Salvage Value ($)</label>
+                        <input type="number" id="intake-parts" step="10" min="0" value="300">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Warranty Status</label>
+                        <select id="intake-warranty">
+                            <option value="expired">Expired</option>
+                            <option value="active">Active (Manufacturer)</option>
+                            <option value="none">None</option>
+                        </select>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label><input type="checkbox" id="intake-hazard"> Swollen Battery / Fire Safety Hazard</label>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-intake">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit & Run Disposition</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="toast" id="toast-notification"></div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

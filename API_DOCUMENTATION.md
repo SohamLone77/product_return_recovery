@@ -11,10 +11,10 @@
 
 The Returns & Recovery Backend provides automated intake, physical condition assessment logging, algorithmic recovery decisioning, and real-time operational/financial analytics.
 
-### Persistence Layer
-- **Engine:** SQLite (default) / PostgreSQL / MySQL via SQLAlchemy ORM.
-- **Transactions:** Atomic commits on all write operations.
-- **Integrity:** Foreign key constraints link assessments and decisions directly to return records with cascade rules.
+### Reverse Logistics Optimization
+- **Single Decision (`POST /decision`):** Evaluates all 7 disposition routes using expected net recovery and determines the incremental repair benefit over the best non-repair fallback.
+- **Batch Optimizer (`POST /optimize`):** Solves the reverse logistics knapsack problem across $N$ devices subject to repair bench capacity $K$ (e.g. 4 slots). Maximizes aggregate expected net recovery and compares against FIFO, cheapest-repair, and unconstrained baselines.
+- **Demonstration Dataset (`POST /demo/seed`, `GET /demo/dataset`):** Provides 10 synthetic electronic devices with varied characteristics for immediate validation and demonstration.
 
 ---
 
@@ -26,177 +26,48 @@ The Returns & Recovery Backend provides automated intake, physical condition ass
 | `GET` | `/returns` | Retrieve persisted returns with filters and pagination | `200 OK` |
 | `POST` | `/assessment` | Submit return physical assessment | `201 Created` |
 | `POST` | `/decision` | Compute deterministic recovery decision & alternative routes | `200 OK` |
+| `POST` | `/optimize` | Batch optimize repair allocation under capacity constraints | `200 OK` |
+| `POST` | `/demo/seed` | Seed 10 synthetic demonstration devices | `201 Created` |
+| `GET` | `/demo/dataset` | Inspect synthetic demonstration devices specification | `200 OK` |
 | `GET` | `/analytics` | Real-time aggregated financial and operational metrics | `200 OK` |
 | `GET` | `/health` | Healthcheck and service metadata | `200 OK` |
 
 ---
 
-## 3. Endpoint Specifications
+## 3. Reverse Logistics Economic Model
 
-### 3.1 `POST /returns`
-Create an initial return request.
+### 3.1 Expected Net Recovery Formula
+For each candidate route:
+$$\text{Expected Net Recovery} = \text{Expected Proceeds} - \text{Expected Route Costs}$$
 
-#### Request Body
-```json
-{
-  "product_id": "SKU-9921",
-  "product_name": "Premium Noise-Cancelling Headphones",
-  "category": "Electronics",
-  "purchase_price": 299.99,
-  "currency": "USD",
-  "customer_id": "CUST-1001",
-  "order_id": "ORD-55421",
-  "return_reason": "Ear cup cushion loose on right side"
-}
-```
+### 3.2 Probabilistic Repair Model
+$$\text{Expected Net Repair Recovery} = p_{success} \times V_{success} + (1 - p_{success}) \times C_{failure} - C_{repair} - C_{test} - C_{logistics} - C_{liability}$$
+Where:
+- $p_{success}$: Estimated probability of successful repair ($0.0 \le p_{success} \le 1.0$).
+- $V_{success}$: Resale proceeds post successful repair.
+- $C_{failure}$: Fallback proceeds if repair fails (e.g., parts harvest or recycling minus fallback costs).
+- $C_{repair}$: Direct parts and technician labor cost.
+- $C_{test}$: Diagnostic and quality testing expense.
+- $C_{logistics}$: Inward/outward handling and transport allocation.
+- $C_{liability}$: Expected post-sale warranty reserve / return liability.
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `product_id` | `string` | **Yes** | Unique product or SKU identifier |
-| `product_name` | `string` | **Yes** | Full product title |
-| `category` | `string` | **Yes** | Product category (e.g., Electronics, Appliances) |
-| `purchase_price` | `float` | **Yes** | Value >= 0.0 |
-| `currency` | `string` | No (default `"USD"`) | Currency code |
-| `customer_id` | `string` | **Yes** | Unique customer identifier |
-| `order_id` | `string` | No | Original sales order identifier |
-| `return_reason` | `string` | **Yes** | Customer-reported return reason |
-
-#### Response (`201 Created`)
-```json
-{
-  "id": "ret_a1b2c3d4e5f6",
-  "product_id": "SKU-9921",
-  "product_name": "Premium Noise-Cancelling Headphones",
-  "category": "Electronics",
-  "purchase_price": 299.99,
-  "currency": "USD",
-  "customer_id": "CUST-1001",
-  "order_id": "ORD-55421",
-  "return_reason": "Ear cup cushion loose on right side",
-  "status": "registered",
-  "created_at": "2026-10-10T05:20:00Z",
-  "updated_at": "2026-10-10T05:20:00Z"
-}
-```
+### 3.3 Incremental Repair Benefit
+$$\text{Incremental Benefit}_i = \text{Net Repair Recovery}_i - \text{Best Feasible Non-Repair Net Recovery}_i$$
+**Core Decision Rule:** A device is only considered for repair if $\text{Incremental Benefit}_i > 0$. Unprofitable repairs are rejected even if repair slots remain open.
 
 ---
 
-### 3.2 `GET /returns`
-Retrieve paginated return records with optional filters.
+## 4. Endpoint Specifications
 
-#### Query Parameters
-- `limit` (int, default `50`, min `1`, max `200`): Maximum records to retrieve.
-- `offset` (int, default `0`, min `0`): Pagination offset.
-- `category` (string, optional): Case-insensitive category match.
-- `status` (string, optional): Filter by `registered`, `assessed`, `decided`.
-
-#### Response (`200 OK`)
-```json
-{
-  "items": [
-    {
-      "id": "ret_a1b2c3d4e5f6",
-      "product_id": "SKU-9921",
-      "product_name": "Premium Noise-Cancelling Headphones",
-      "category": "Electronics",
-      "purchase_price": 299.99,
-      "currency": "USD",
-      "customer_id": "CUST-1001",
-      "order_id": "ORD-55421",
-      "return_reason": "Ear cup cushion loose on right side",
-      "status": "registered",
-      "created_at": "2026-10-10T05:20:00Z",
-      "updated_at": "2026-10-10T05:20:00Z"
-    }
-  ],
-  "total": 1,
-  "limit": 50,
-  "offset": 0
-}
-```
-
----
-
-### 3.3 `POST /assessment`
-Submitted by Person 2 (Return Assessment module) upon physical inspection.
-
-#### Request Body
-```json
-{
-  "return_id": "ret_a1b2c3d4e5f6",
-  "product_condition": "minor_damage",
-  "defect_category": "functional",
-  "defect_description": "Right driver rattling; housing intact.",
-  "visible_damage": false,
-  "warranty_status": "active",
-  "purchase_date": "2025-06-15",
-  "warranty_expiry_date": "2026-06-15",
-  "verified_warranty_eligible": true,
-  "proof_of_purchase_metadata": {
-    "receipt_id": "REC-882",
-    "retailer": "Direct Store"
-  },
-  "image_reference": "https://storage.provider.com/returns/ret_a1b2c3d4e5f6.jpg",
-  "fraud_risk_score": 0.1,
-  "fraud_flags": [],
-  "assessor_notes": "All accessories present in original box."
-}
-```
-
-| Field | Type | Required | Allowed Values / Validation |
-|---|---|---|---|
-| `return_id` | `string` | **Yes** | Must exist in `returns` table (otherwise returns `404`) |
-| `product_condition` | `string` | **Yes** | `unopened`, `like_new`, `minor_damage`, `major_damage`, `defective` |
-| `defect_category` | `string` | **Yes** | `none`, `cosmetic`, `functional`, `missing_parts`, `electrical`, `other` |
-| `defect_description` | `string` | No | Free-text defect description |
-| `visible_damage` | `boolean` | No (default `false`) | Physical damage observed |
-| `warranty_status` | `string` | **Yes** | `active`, `expired`, `unknown`, `none` (User-reported) |
-| `verified_warranty_eligible` | `boolean` | No | Independently validated warranty eligibility |
-| `purchase_date` | `string` | No | Purchase date string |
-| `warranty_expiry_date` | `string` | No | Expiration date string |
-| `proof_of_purchase_metadata` | `object` | No | Key-value receipt or proof metadata |
-| `image_reference` | `string` | No | URL or file storage key |
-| `fraud_risk_score` | `float` | No | `0.0` to `1.0` |
-| `fraud_flags` | `list[str]`| No | List of detected anomaly codes |
-| `assessor_notes` | `string` | No | Internal technician notes |
-
-#### Response (`201 Created`)
-```json
-{
-  "id": "asm_9f8e7d6c5b4a",
-  "return_id": "ret_a1b2c3d4e5f6",
-  "product_condition": "minor_damage",
-  "defect_category": "functional",
-  "defect_description": "Right driver rattling; housing intact.",
-  "visible_damage": false,
-  "warranty_status": "active",
-  "purchase_date": "2025-06-15",
-  "warranty_expiry_date": "2026-06-15",
-  "verified_warranty_eligible": true,
-  "proof_of_purchase_metadata": {
-    "receipt_id": "REC-882",
-    "retailer": "Direct Store"
-  },
-  "image_reference": "https://storage.provider.com/returns/ret_a1b2c3d4e5f6.jpg",
-  "fraud_risk_score": 0.1,
-  "fraud_flags": [],
-  "assessor_notes": "All accessories present in original box.",
-  "created_at": "2026-10-10T05:22:00Z"
-}
-```
-
----
-
-### 3.4 `POST /decision`
-Evaluates the return condition and computes the highest net recovery route with complete explanations.
+### 4.1 `POST /decision`
+Evaluates a single device return record.
 
 #### Request Body
 ```json
 {
   "return_id": "ret_a1b2c3d4e5f6",
   "custom_costs": {
-    "inspection": 8.0,
-    "repair": 45.0
+    "repair": 50.0
   }
 }
 ```
@@ -206,110 +77,137 @@ Evaluates the return condition and computes the highest net recovery route with 
 {
   "id": "dec_3c2b1a0f9e8d",
   "return_id": "ret_a1b2c3d4e5f6",
-  "recommended_action": "return_to_supplier",
-  "expected_recovered_value": 269.99,
-  "estimated_costs": 26.0,
-  "expected_net_recovery": 243.99,
-  "cost_breakdown": {
-    "inspection": 8.0,
-    "shipping_and_handling": 12.0,
-    "rma_processing": 6.0
-  },
+  "recommended_action": "repair",
+  "recommended_route": "repair",
+  "expected_recovered_value": 810.0,
+  "estimated_costs": 155.0,
+  "expected_net_recovery": 655.0,
+  "best_non_repair_route": "harvest_parts",
+  "best_non_repair_net_recovery": 265.0,
+  "repair_incremental_benefit": 390.0,
+  "incremental_value_vs_next_best_route": 390.0,
+  "confidence_score": 0.95,
+  "manual_review_required": false,
+  "manual_review_reasons": [],
+  "flags": [],
   "alternative_routes": [
-    {
-      "route": "restock",
-      "feasible": false,
-      "expected_recovered_value": 0.0,
-      "route_costs": 0.0,
-      "expected_net_recovery": -13.0,
-      "cost_breakdown": {},
-      "feasibility_note": "Infeasible: Product shows wear, damage, or functional defects."
-    },
-    {
-      "route": "return_to_supplier",
-      "feasible": true,
-      "expected_recovered_value": 269.99,
-      "route_costs": 26.0,
-      "expected_net_recovery": 243.99,
-      "cost_breakdown": {
-        "inspection": 8.0,
-        "shipping_and_handling": 12.0,
-        "rma_processing": 6.0
-      },
-      "feasibility_note": "Feasible under active supplier warranty with authorized RMA."
-    },
     {
       "route": "repair",
       "feasible": true,
-      "expected_recovered_value": 239.99,
-      "route_costs": 68.0,
-      "expected_net_recovery": 171.99,
+      "expected_recovered_value": 810.0,
+      "route_costs": 155.0,
+      "expected_net_recovery": 655.0,
       "cost_breakdown": {
-        "inspection": 8.0,
-        "repair_parts_labor": 45.0,
-        "testing": 10.0,
-        "handling": 5.0
+        "repair_parts_labor": 120.0,
+        "diagnostic_testing": 12.0,
+        "handling_and_logistics": 10.0,
+        "post_repair_warranty_liability": 13.0
       },
-      "feasibility_note": "Feasible for repairable components where recovery value exceeds technician & part costs."
+      "feasibility_note": "Feasible: Technician bench repairable with estimated success probability 95%."
+    },
+    {
+      "route": "harvest_parts",
+      "feasible": true,
+      "expected_recovered_value": 280.0,
+      "route_costs": 15.0,
+      "expected_net_recovery": 265.0,
+      "cost_breakdown": {"disassembly_labor": 15.0},
+      "feasibility_note": "Feasible: High-value reusable modular components."
     }
   ],
-  "reason_codes": [
-    "RC_SUPPLIER_WARRANTY_RECOVERY"
-  ],
-  "explanation": "Covered under warranty with defect in functional. RMA return to supplier provides highest net recovery of $243.99 with minimal internal costs.",
-  "manual_review_required": false,
-  "flags": [],
-  "capacity_notes": "Single-device deterministic baseline evaluation. Repair bench capacity and technician batch scheduling ready for integration.",
+  "reason_codes": ["RC_ECONOMIC_REPAIR_OPTIMAL"],
+  "explanation": "Repair is economically optimal with positive incremental benefit of +$390.00 over next-best route (harvest_parts).",
   "created_at": "2026-10-10T05:25:00Z"
 }
 ```
 
 ---
 
-### 3.5 `GET /analytics`
-Provides aggregated dashboard metrics for executive and operations teams.
+### 4.2 `POST /optimize`
+Batch allocates repair bench slots to maximize total expected net recovery across returns.
+
+#### Request Body
+```json
+{
+  "return_ids": null,
+  "repair_capacity_slots": 4,
+  "max_repair_hours": null,
+  "custom_costs": null
+}
+```
 
 #### Response (`200 OK`)
 ```json
 {
-  "total_returns": 120,
-  "returns_by_condition": {
-    "unopened": 45,
-    "like_new": 30,
-    "minor_damage": 25,
-    "major_damage": 12,
-    "defective": 8
+  "run_id": "opt_9a8b7c6d5e4f",
+  "total_devices_evaluated": 10,
+  "repair_capacity_slots": 4,
+  "repair_slots_used": 4,
+  "capacity_utilization_pct": 100.0,
+  "optimized_total_net_recovery": 4642.50,
+  "baseline_unconstrained_net_recovery": 4642.50,
+  "baseline_fifo_net_recovery": 3915.20,
+  "baseline_cheapest_repair_net_recovery": 3840.10,
+  "dollar_uplift_vs_fifo": 727.30,
+  "pct_uplift_vs_fifo": 18.6,
+  "dollar_uplift_vs_cheapest": 802.40,
+  "pct_uplift_vs_cheapest": 20.9,
+  "allocations": [
+    {
+      "return_id": "ret_demo_01",
+      "product_name": "[Synthetic Demo] Flagship Smartphone 15 Pro",
+      "category": "Electronics",
+      "assigned_route": "repair",
+      "expected_proceeds": 811.0,
+      "expected_cost": 165.0,
+      "expected_net_recovery": 646.0,
+      "was_repair_selected": true,
+      "repair_feasible": true,
+      "repair_incremental_benefit": 381.0,
+      "best_non_repair_route": "harvest_parts",
+      "best_non_repair_net_recovery": 265.0,
+      "repair_hours": 1.5,
+      "manual_review_required": false,
+      "manual_review_reasons": [],
+      "allocation_rationale": "Selected for repair bench slot. Delivers +$381.00 incremental net recovery over fallback 'harvest_parts'."
+    }
+  ],
+  "batch_explanation": "Evaluated 10 returned devices against 4 repair bench slots. Allocated 4/4 slots (100.0% utilization) exclusively to devices delivering positive incremental net recovery. Achieved $4642.50 total expected net recovery, generating +$727.30 (+18.6%) financial uplift over FIFO arrival scheduling and +$802.40 (+20.9%) over naive cheapest-repair scheduling.",
+  "comparison_summary": {
+    "optimized": {"total_net_recovery": 4642.50, "repairs_selected": 4},
+    "baseline_fifo": {"total_net_recovery": 3915.20, "dollar_difference": 727.30, "pct_uplift": 18.6},
+    "baseline_cheapest_repair": {"total_net_recovery": 3840.10, "dollar_difference": 802.40, "pct_uplift": 20.9}
   },
-  "returns_by_warranty_status": {
-    "active": 75,
-    "expired": 35,
-    "none": 10
-  },
-  "counts_by_recommended_action": {
-    "restock": 45,
-    "refurbish": 28,
-    "return_to_supplier": 22,
-    "repair": 15,
-    "resell_secondary": 5,
-    "manual_assessment": 5
-  },
-  "total_estimated_recovered_value": 18450.50,
-  "total_estimated_processing_costs": 2410.00,
-  "total_expected_net_recovery": 16040.50,
-  "manual_physical_review_count": 5,
-  "fraud_risk_flag_count": 2,
-  "records_with_complete_economic_data": 115,
-  "accounting_notes": "Financial aggregations calculated strictly across 115 returns with completed decision records. Returns without completed decisions are excluded from financial totals to prevent distorted averages. Each return's latest assessment and decision are used to prevent duplicate counting."
+  "created_at": "2026-10-10T05:28:00Z"
 }
 ```
 
 ---
 
-## 4. Error Responses
+### 4.3 `POST /demo/seed`
+Populates the database with 10 synthetic electronic devices representing:
+1. High-value flagship smartphone (strong repair incremental benefit).
+2. Ultra gaming laptop (highest repair incremental recovery).
+3. Creator tablet (strong positive repair recovery).
+4. 4K OLED TV (strong positive repair recovery).
+5. Budget phone (repair economically unattractive; negative incremental benefit).
+6. Smartwatch (refurbishment beats repair).
+7. Crushed PC tower (parts harvesting beats scrap recycling).
+8. Smart hub (verified manufacturer warranty claim beats internal rework).
+9. Counterfeit earbuds (policy guardrail: manual review).
+10. Swollen battery ultrabook (safety guardrail: hazmat manual review).
 
-All error responses strictly follow standard JSON formatting without exposing internal database or stack trace details:
+#### Response (`201 Created`)
+```json
+{
+  "message": "Successfully seeded 10 synthetic demonstration devices.",
+  "seeded_count": 10,
+  "return_ids": ["ret_demo_...", "..."],
+  "repair_capacity_slots": 4
+}
+```
 
-- **400 Bad Request:** Payload malformed or schema violation.
-- **404 Not Found:** Referenced resource does not exist (e.g. unknown `return_id`).
-- **422 Unprocessable Entity:** Field-level validation failed (e.g. negative price, invalid enum).
-- **500 Internal Server Error:** Sanitized error response; trace recorded in secure server logs.
+---
+
+### 4.4 `GET /demo/dataset`
+Returns the raw specification of the 10 demonstration devices.

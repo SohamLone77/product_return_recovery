@@ -1,8 +1,10 @@
+import os
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.config import settings
 from app.database import engine, Base
 from app.routers import returns, assessment, decision, analytics
@@ -19,6 +21,8 @@ async def lifespan(app: FastAPI):
     # Initialize database tables on startup
     logger.info("Initializing database schema...")
     Base.metadata.create_all(bind=engine)
+    from app.database import ensure_schema_migrations
+    ensure_schema_migrations(engine)
     logger.info("Database schema initialized successfully.")
     yield
 
@@ -28,7 +32,7 @@ app = FastAPI(
     description=(
         "Production-grade backend for the Intelligent Product Returns & Recovery Engine. "
         "Provides return tracking, condition assessment, explainable disposition decisions, "
-        "and financial/operational analytics."
+        "capacity-constrained batch optimization, and financial/operational analytics."
     ),
     lifespan=lifespan,
     docs_url="/docs",
@@ -54,6 +58,11 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"detail": "An internal server error occurred. Please contact system administrator."}
     )
 
+# Mount Static Assets Directory
+static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+if os.path.isdir(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
 # Include API Routers
 app.include_router(returns.router)
 app.include_router(assessment.router)
@@ -70,10 +79,18 @@ def health_check():
         "version": "1.0.0"
     }
 
-@app.get("/", tags=["System"])
-def root():
+@app.get("/", tags=["Dashboard"])
+def serve_dashboard():
+    """Serves the Interactive ReverseLogix AI Web Dashboard."""
+    index_path = os.path.join(static_dir, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
     return {
         "message": "Welcome to the Intelligent Product Returns & Recovery Engine API.",
         "documentation": "/docs",
         "redoc": "/redoc"
     }
+
+@app.get("/dashboard", tags=["Dashboard"])
+def dashboard_alias():
+    return serve_dashboard()
