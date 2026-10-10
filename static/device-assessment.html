@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Device Intelligence &amp; Return Assessment — Returns &amp; Recovery Engine</title>
+  <meta name="description" content="AI Device Intelligence module: authenticity screening, condition scoring, warranty verification, and structured defect diagnostics for returned electronics.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/assessment.css">
+  <link rel="stylesheet" href="css/device-intelligence.css">
+</head>
+<body>
+<div class="app-container">
+
+  <!-- ── Header ── -->
+  <header class="app-header">
+    <div class="header-inner">
+      <a href="/" class="brand-section">
+        <div class="brand-logo">⚡</div>
+        <div class="brand-title-group">
+          <h1>Returns &amp; Recovery Engine</h1>
+          <div class="brand-subtitle">
+            <span>Device Intelligence</span>
+            <span class="badge-module">Feature Branch: device-assessment</span>
+          </div>
+        </div>
+      </a>
+      <div class="header-actions">
+        <div id="headerApiBadge" class="api-status-badge mock-mode">
+          <span class="status-dot"></span>
+          <span>Connecting...</span>
+        </div>
+        <a href="/" class="btn btn-outline btn-sm">← Return Assessment</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Main ── -->
+  <main class="main-wrapper">
+
+    <!-- Hero -->
+    <div class="hero-banner" style="margin-bottom: 1.75rem;">
+      <div class="hero-content">
+        <div class="hero-tag">Module: Device Intelligence · Rule-Based Heuristic Engine</div>
+        <h2 class="hero-title">Device Intelligence &amp; Return Assessment</h2>
+        <p class="hero-desc">
+          Authenticity risk screening, image-based condition grading, warranty entitlement verification,
+          and structured defect diagnostics — producing a structured assessment payload for the economic decision engine.
+        </p>
+        <div class="hero-actions" style="margin-bottom: 0;">
+          <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.6;">
+            <span style="color: var(--amber-400);">⚡ Heuristic Engine</span> — No CV model or manufacturer API. All scoring is rule-based and clearly labelled. Select a demo return below to begin.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Selected Return Banner -->
+    <div id="selectedReturnBanner" style="display: none; align-items: center; justify-content: space-between; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); border-radius: var(--radius-md); padding: 0.75rem 1.25rem; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <span style="color: var(--amber-400); font-weight: 700;">📦 Selected:</span>
+        <span id="selectedReturnIdText" style="font-family: var(--font-mono); color: var(--amber-400);"></span>
+        <span id="selectedReturnNameText" style="color: var(--text-primary); font-weight: 600;"></span>
+      </div>
+      <button id="btnClearReturn" class="btn btn-ghost btn-sm">Clear ✕</button>
+    </div>
+
+    <!-- Module Tabs -->
+    <div class="module-tabs">
+      <button class="module-tab-btn active" data-tab="daTabDemoReturns">📋 Demo Returns (10)</button>
+      <button class="module-tab-btn" data-tab="daTabQuestionnaire">📝 Questionnaire</button>
+      <button class="module-tab-btn" data-tab="daTabResults">📊 Assessment Results</button>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         TAB 1: DEMO RETURNS
+    ════════════════════════════════════════════════ -->
+    <div id="daTabDemoReturns" class="da-tab-view" style="padding-top: 1.5rem;">
+      <div style="margin-bottom: 1.25rem;">
+        <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.35rem;">10 Synthetic Demo Return Records</h3>
+        <p style="font-size: 0.875rem; color: var(--text-secondary);">
+          Labelled fixtures covering genuine, suspicious, counterfeit, and unknown authenticity scenarios.
+          Click any card to load it into the questionnaire.
+        </p>
+      </div>
+      <div id="demoReturnsGrid" class="return-cards-grid">
+        <div style="color: var(--text-muted); font-size: 0.875rem;">Loading...</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         TAB 2: QUESTIONNAIRE
+    ════════════════════════════════════════════════ -->
+    <div id="daTabQuestionnaire" class="da-tab-view" style="display: none; padding-top: 1.5rem;">
+
+      <div id="daAlertBanner" class="alert-banner" role="alert" style="display: none; margin-bottom: 1.25rem;"></div>
+
+      <form id="deviceAssessmentForm" novalidate onsubmit="return false;">
+
+        <!-- A. PRODUCT IDENTITY -->
+        <div class="questionnaire-section">
+          <div class="qs-title">🔖 A. Product Identity &amp; Intake Details</div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label" for="inputReturnId">Return ID <span class="label-required">*</span></label>
+              <input id="inputReturnId" class="form-input" type="text" placeholder="e.g. RET-2026-0041" autocomplete="off">
+              <div id="errReturnId" class="error-message" style="display:none;"></div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="inputCategory">Product Category <span class="label-required">*</span></label>
+              <select id="inputCategory" class="form-select">
+                <option value="">Select category...</option>
+                <option>Smartphones &amp; Tablets</option>
+                <option>Laptops &amp; Computers</option>
+                <option>Audio &amp; Wearables</option>
+                <option>Consumer Electronics</option>
+                <option>Home Appliances</option>
+                <option>Cameras &amp; Accessories</option>
+                <option>Gaming Consoles</option>
+                <option>Other</option>
+              </select>
+              <div id="errCategory" class="error-message" style="display:none;"></div>
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label" for="inputManufacturer">Manufacturer</label>
+              <input id="inputManufacturer" class="form-input" type="text" placeholder="e.g. Apple, Samsung, Sony">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="inputModel">Model</label>
+              <input id="inputModel" class="form-input" type="text" placeholder="e.g. iPhone 15 Pro">
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label" for="inputSerial">Serial Number</label>
+              <input id="inputSerial" class="form-input" type="text" placeholder="As on packaging label">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="inputImei">IMEI (Phones/Tablets)</label>
+              <input id="inputImei" class="form-input" type="text" placeholder="15-digit IMEI">
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label" for="inputPurchaseDate">Purchase Date</label>
+              <input id="inputPurchaseDate" class="form-input" type="date">
+              <div id="errPurchaseDate" class="error-message" style="display:none;"></div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="inputReturnDate">Return Date</label>
+              <input id="inputReturnDate" class="form-input" type="date">
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label" for="inputSellerChannel">Purchase Channel / Seller</label>
+              <input id="inputSellerChannel" class="form-input" type="text" placeholder="e.g. Amazon, Croma, Apple Store">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="inputPurchasePrice">Claimed Purchase Price (₹)</label>
+              <input id="inputPurchasePrice" class="form-input" type="number" min="0" placeholder="0">
+            </div>
+          </div>
+
+          <div class="qs-checkbox-group" style="margin-top: 0.5rem;">
+            <label class="qs-checkbox-item">
+              <input type="checkbox" id="chkInvoice">
+              <span>Invoice / Receipt Available</span>
+            </label>
+            <label class="qs-checkbox-item">
+              <input type="checkbox" id="chkWarrantyClaimed">
+              <span>Customer Claims Warranty</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- B. PHYSICAL CONDITION -->
+        <div class="questionnaire-section">
+          <div class="qs-title">📱 B. Physical Condition Assessment</div>
+
+          <div class="form-group">
+            <label class="form-label">Device Powers On?</label>
+            <div class="three-way-group">
+              <button type="button" class="three-way-btn" id="poYes">✅ Yes</button>
+              <button type="button" class="three-way-btn" id="poNo">❌ No</button>
+              <button type="button" class="three-way-btn" id="poUnk">❓ Unknown</button>
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label" for="selectScreenCondition">Screen / Display Condition</label>
+              <select id="selectScreenCondition" class="form-select">
+                <option value="">Select...</option>
+                <option>Perfect - no scratches</option>
+                <option>Minor scratches (non-visible in use)</option>
+                <option>Visible scratches</option>
+                <option>Cracked - functional</option>
+                <option>Cracked - non-functional</option>
+                <option>Completely shattered</option>
+                <option>Not applicable</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="selectBodyCondition">Body / Casing Condition</label>
+              <select id="selectBodyCondition" class="form-select">
+                <option value="">Select...</option>
+                <option>Like new</option>
+                <option>Minor scuffs</option>
+                <option>Dents/scratches visible</option>
+                <option>Significant physical damage</option>
+                <option>Severely damaged</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="qs-checkbox-group">
+            <label class="qs-checkbox-item"><input type="checkbox" id="chkLiquidDamage"><span>💧 Liquid / Water Damage</span></label>
+            <label class="qs-checkbox-item"><input type="checkbox" id="chkImpactDamage"><span>💥 Drop / Impact Damage</span></label>
+            <label class="qs-checkbox-item"><input type="checkbox" id="chkMissingParts"><span>🔩 Missing Components/Accessories</span></label>
+            <label class="qs-checkbox-item"><input type="checkbox" id="chkTamper"><span>⚙️ Signs of Tampering/Unauthorized Repair</span></label>
+          </div>
+
+          <div class="form-group" style="margin-top: 1.25rem;">
+            <label class="form-label">Tamper Seals</label>
+            <div class="three-way-group" style="max-width: 320px;">
+              <button type="button" class="three-way-btn" id="sealYes">Intact ✅</button>
+              <button type="button" class="three-way-btn" id="sealNo">Broken / Missing ❌</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- C. FUNCTIONAL DEFECTS -->
+        <div class="questionnaire-section">
+          <div class="qs-title">⚙️ C. Functional Defect Diagnostics</div>
+
+          <div class="qs-checkbox-group">
+            <label class="qs-checkbox-item"><input type="checkbox" id="chkBattery"><span>🔋 Battery Issue</span></label>
+            <label class="qs-checkbox-item"><input type="checkbox" id="chkScreen"><span>🖥️ Screen/Display Issue</span></label>
+            <label class="qs-checkbox-item"><input type="checkbox" id="chkCharging"><span>🔌 Charging/Power Issue</span></label>
+            <label class="qs-checkbox-item"><input type="checkbox" id="chkMotherboard"><span>🖧 Motherboard/Hardware Failure</span></label>
+            <label class="qs-checkbox-item"><input type="checkbox" id="chkCamera"><span>📷 Camera/Audio/Sensor Issue</span></label>
+            <label class="qs-checkbox-item"><input type="checkbox" id="chkSoftware"><span>💻 Software/Firmware Issue</span></label>
+          </div>
+
+          <div class="form-group" style="margin-top: 1.25rem;">
+            <label class="form-label" for="inputCustomerSymptoms">Customer-Reported Symptoms</label>
+            <textarea id="inputCustomerSymptoms" class="form-textarea" rows="3"
+              placeholder="Describe what the customer reported in their own words..."></textarea>
+          </div>
+        </div>
+
+        <!-- D. AUTHENTICITY SCREENING -->
+        <div class="questionnaire-section">
+          <div class="qs-title">🔐 D. Authenticity &amp; Fraud Risk Screening</div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label" for="inputSerialOnDevice">Serial as Displayed on Device</label>
+              <input id="inputSerialOnDevice" class="form-input" type="text" placeholder="As shown in device settings">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="inputPackagingNote">Packaging Notes</label>
+              <input id="inputPackagingNote" class="form-input" type="text" placeholder="e.g. repackaged, damaged, original">
+            </div>
+          </div>
+
+          <div class="qs-checkbox-group">
+            <label class="qs-checkbox-item"><input type="checkbox" id="chkLabelInconsistency"><span>⚠️ Label/Device Information Inconsistency</span></label>
+          </div>
+        </div>
+
+        <!-- E. ECONOMIC & WARRANTY -->
+        <div class="questionnaire-section">
+          <div class="qs-title">💰 E. Economic Estimates &amp; Warranty (INR)</div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label" for="inputEstRepairCost">Estimated Repair Cost (₹)</label>
+              <input id="inputEstRepairCost" class="form-input" type="number" min="0" placeholder="0">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="inputEstResaleValue">Estimated Resale Value (₹)</label>
+              <input id="inputEstResaleValue" class="form-input" type="number" min="0" placeholder="0">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="inputEstPartsValue">Estimated Parts Harvest Value (₹)</label>
+            <input id="inputEstPartsValue" class="form-input" type="number" min="0" placeholder="0" style="max-width: 300px;">
+          </div>
+        </div>
+
+        <!-- F. IMAGES -->
+        <div class="questionnaire-section">
+          <div class="qs-title">📷 F. Device Images (Optional)</div>
+          <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.85rem;">
+            Upload front, back, screen, labels, and visible damage photos. Each image increases assessment confidence score.
+          </p>
+
+          <input type="file" id="daFileInput" accept="image/*" multiple style="display: none;">
+          <div id="daImageDropzone" class="img-upload-area">
+            <div style="font-size: 1.5rem; margin-bottom: 0.35rem;">📷</div>
+            <div style="font-size: 0.9rem; font-weight: 600; color: var(--text-primary);">Click or drag &amp; drop images</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted);">PNG, JPG, WEBP · Max 8MB each</div>
+          </div>
+          <div id="daImagePreviewStrip" class="img-preview-strip"></div>
+        </div>
+
+        <!-- Submit -->
+        <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+          <button type="button" id="btnSubmitDeviceAssessment" class="btn btn-primary btn-lg">
+            <span>Run Full Assessment</span>
+            <span>➔</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         TAB 3: RESULTS
+    ════════════════════════════════════════════════ -->
+    <div id="daTabResults" class="da-tab-view" style="display: none; padding-top: 1.5rem;">
+
+      <div id="daResultSkeleton" style="color: var(--text-muted); padding: 3rem; text-align: center;">
+        <div style="font-size: 1.5rem; margin-bottom: 0.75rem;">📊</div>
+        <div>No assessment results yet. Fill the questionnaire and run an assessment.</div>
+      </div>
+
+      <div id="daResultView" style="display: none;">
+
+        <!-- Assessment ID header -->
+        <div class="disposition-banner">
+          <div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.25rem;">Assessment ID</div>
+            <div id="daAssessmentId" style="font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; color: var(--amber-400);">—</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+            <div id="daBackendMode" class="api-status-badge"><span class="status-dot"></span><span>—</span></div>
+            <div>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.2rem;">Preliminary Disposition</div>
+              <span id="dispositionBadge" class="disposition-route-badge">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Manual Review Flag -->
+        <div id="manualReviewBox" style="display:none; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.35); border-radius: var(--radius-md); padding: 1rem 1.25rem; margin-bottom: 1.5rem;">
+          <div style="font-weight: 700; color: var(--amber-400); margin-bottom: 0.5rem;">⚠️ Manual Review Required</div>
+          <ul id="manualReviewReasons" style="padding-left: 1.25rem; font-size: 0.875rem; color: var(--text-secondary); line-height: 1.7;"></ul>
+        </div>
+
+        <!-- Score Gauges -->
+        <div class="score-gauge-grid">
+          <div id="gaugeCondition" class="score-gauge-card score-neutral">
+            <div class="score-gauge-title">Condition Score</div>
+            <div class="score-gauge-value">—</div>
+            <div class="score-gauge-sub">/ 100</div>
+            <div class="score-gauge-bar"><div class="score-gauge-fill" style="width:0%"></div></div>
+          </div>
+          <div id="gaugeRepair" class="score-gauge-card score-neutral">
+            <div class="score-gauge-title">Repairability Score</div>
+            <div class="score-gauge-value">—</div>
+            <div class="score-gauge-sub">/ 100 (Heuristic Estimate)</div>
+            <div class="score-gauge-bar"><div class="score-gauge-fill" style="width:0%"></div></div>
+          </div>
+          <div id="gaugeConfidence" class="score-gauge-card score-neutral">
+            <div class="score-gauge-title">Assessment Confidence</div>
+            <div class="score-gauge-value">—</div>
+            <div class="score-gauge-sub">/ 100 (increases with images)</div>
+            <div class="score-gauge-bar"><div class="score-gauge-fill" style="width:0%"></div></div>
+          </div>
+          <div id="gaugeRisk" class="score-gauge-card score-neutral">
+            <div class="score-gauge-title">Authenticity Risk Score</div>
+            <div class="score-gauge-value">—</div>
+            <div class="score-gauge-sub">/ 100 (lower = less risk)</div>
+            <div class="score-gauge-bar"><div class="score-gauge-fill" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <!-- Status Badges -->
+        <div style="display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap; margin-bottom: 2rem;">
+          <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: .05em;">Authenticity</div>
+            <span id="authStatusBadge" class="auth-badge auth-unknown">Unknown</span>
+          </div>
+          <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: .05em;">Warranty Status</div>
+            <span id="warrantyStatusBadge" style="font-size: 0.95rem; font-weight: 700;">—</span>
+          </div>
+        </div>
+
+        <!-- Evidence Panels -->
+        <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 1rem;">Assessment Evidence</h3>
+
+        <div class="evidence-panel">
+          <div class="evidence-panel-header">
+            <div class="evidence-panel-title">🔐 Authenticity Screening Evidence</div>
+            <span class="evidence-chevron">▼</span>
+          </div>
+          <div class="evidence-panel-body" id="evidenceAuthBody">
+            <div style="color: var(--text-muted); font-size: 0.82rem;">No data yet.</div>
+          </div>
+        </div>
+
+        <div class="evidence-panel">
+          <div class="evidence-panel-header">
+            <div class="evidence-panel-title">📱 Condition &amp; Repairability Evidence</div>
+            <span class="evidence-chevron">▼</span>
+          </div>
+          <div class="evidence-panel-body" id="evidenceCondBody">
+            <div style="color: var(--text-muted); font-size: 0.82rem;">No data yet.</div>
+          </div>
+        </div>
+
+        <div class="evidence-panel">
+          <div class="evidence-panel-header">
+            <div class="evidence-panel-title">🛡️ Warranty Verification Evidence</div>
+            <span class="evidence-chevron">▼</span>
+          </div>
+          <div class="evidence-panel-body" id="evidenceWarrBody">
+            <div style="color: var(--text-muted); font-size: 0.82rem;">No data yet.</div>
+          </div>
+        </div>
+
+        <div class="disclaimer-box" style="margin-top: 1.5rem;">
+          <strong>Important:</strong> All scores are generated by a <strong>heuristic rule engine</strong>.
+          No computer-vision model or manufacturer API was used. Condition and repairability scores are clearly labelled as
+          HEURISTIC ESTIMATES. A suspicious authenticity result does not automatically imply customer fraud.
+          Warrant rejection does not imply fraud. Physical inspection is required for conclusive assessment.
+        </div>
+
+        <div style="margin-top: 2rem;">
+          <button id="btnNewAssessment" class="btn btn-secondary">+ New Assessment</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <div class="footer-inner">
+      <div><strong>Device Intelligence &amp; Return Assessment</strong> · Branch: feature/device-assessment</div>
+      <div>
+        <code>POST /api/device-assessment</code> ·
+        <code>POST /api/device-assessment/authenticity</code> ·
+        <code>POST /api/device-assessment/warranty</code>
+      </div>
+    </div>
+  </footer>
+
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+</div>
+
+<script src="js/api/deviceAssessmentApi.js"></script>
+<script src="js/deviceAssessmentApp.js"></script>
+</body>
+</html>

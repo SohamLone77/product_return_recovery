@@ -1,6 +1,6 @@
-# Intelligent Product Returns & Recovery Engine — Reverse Logistics & Optimization
+# Intelligent Product Returns & Recovery Engine
 
-High-performance, explainable REST API backend and reverse logistics decision engine for managing product returns, condition assessments, probabilistic repair modeling, and capacity-constrained batch optimization.
+High-performance, explainable REST API backend and reverse logistics decision engine for managing product returns, condition assessments, probabilistic repair modeling, device intelligence, and capacity-constrained batch optimization.
 
 ---
 
@@ -19,37 +19,58 @@ High-performance, explainable REST API backend and reverse logistics decision en
    - Avoids wasteful naive strategies: leaves slots open if repairs are economically unattractive.
    - Computes rigorous financial uplifts against **FIFO (Arrival-Order)** and **Cheapest-Repair** baselines.
 
-3. **Demonstration Dataset (`POST /demo/seed`, `GET /demo/dataset`):**
-   - Pre-configured 10 synthetic electronic devices showcasing diverse real-world edge cases:
-     - Devices with strong positive repair incremental benefits.
-     - Devices where repair is feasible but economically unattractive.
-     - Units where cosmetic refurbishment beats repair.
-     - Structural write-offs where modular parts harvesting beats scrap recycling.
-     - Units where verified manufacturer warranty claim beats internal rework.
-     - Policy escalations for counterfeit detection and swollen lithium batteries.
+3. **Return Assessment & Intake Pipeline (`POST /assessment`):**
+   - Multi-step intake flow to evaluate returned merchandise and classify physical conditions (`New / unopened`, `Like new`, `Used`, `Damaged`, `Non-functional`).
+   - Technical defect categorization, image attachments, and warranty entitlement checks.
+   - Preliminary disposition heuristic calculations with explainable rationale.
 
-4. **Intake, Assessments, & Analytics:**
-   - Validated return creation (`POST /returns`, `GET /returns`).
-   - Technical physical assessments (`POST /assessment`).
-   - Executive operational analytics (`GET /analytics`).
+4. **AI Device Intelligence & Authenticity Engine:**
+   - Authenticity screening (genuine vs. counterfeit risk scoring).
+   - Repairability and component defect scoring.
+   - 10 synthetic real-world edge case demonstration records.
+
+5. **Operations & Financial Analytics (`GET /analytics`):**
+   - Real-time metrics for conditions, warranties, disposition actions, and net recovery totals.
 
 ---
 
-## 🛠️ Technology Stack
+## 🛠️ Technology Stack & Architecture
 
-- **Language:** Python 3.10+
-- **Framework:** FastAPI
-- **Validation & Schemas:** Pydantic v2
-- **Persistence Layer:** SQLAlchemy 2.0 (SQLite by default; supports PostgreSQL / MySQL)
-- **ASGI Server:** Uvicorn
-- **Testing:** Pytest with HTTPX TestClient (22 automated test suites)
+```text
+product_return_recovery/
+├── app/                        # Modular FastAPI Backend Engine
+│   ├── main.py                 # FastAPI application, OpenAPI docs, and static routes
+│   ├── config.py               # Pydantic environment configuration
+│   ├── database.py             # SQLAlchemy 2.0 SQLite persistence
+│   ├── models.py               # Database ORM models
+│   ├── schemas.py              # Pydantic v2 schemas
+│   ├── decision_engine.py      # Probabilistic recovery & batch capacity knapsack
+│   ├── analytics_service.py    # Aggregate financial & operational reporting
+│   └── routers/                # Endpoints for returns, assessment, decision, analytics
+├── app.py                      # Flask Device Assessment & Intake Engine
+├── run_demo.py                 # 10-fixture terminal demo runner
+├── requirements.txt            # Unified project dependencies
+├── static/                     # Frontend Web Dashboards
+│   ├── index.html              # Interactive Reverse Logistics Executive Dashboard
+│   ├── assessment-wizard.html  # Multi-step Return Assessment Intake Wizard
+│   ├── device-assessment.html  # AI Device Intelligence Console
+│   ├── css/                    # Stylesheets
+│   └── js/                     # Modular frontend logic & API clients
+└── tests/                      # Automated Test Suites (75 tests across pytest & unittest)
+```
 
 ---
 
 ## 📦 Setup & Installation
 
+### 1. Install Dependencies
 ```bash
 pip install -r requirements.txt
+```
+
+### 2. Environment Configuration
+Copy `.env.example` to `.env`:
+```bash
 cp .env.example .env
 ```
 
@@ -57,29 +78,35 @@ cp .env.example .env
 
 ## 🏃 Running the Application
 
-Start the local server:
+### Option A: ReverseLogix AI Executive Dashboard & FastAPI Engine (Port 8000)
 ```bash
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
+- **Web Dashboard:** [http://localhost:8000/](http://localhost:8000/)
+- **Swagger UI:** [http://localhost:8000/docs](http://localhost:8000/docs)
+- **ReDoc:** [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
-Interactive documentation:
-- Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
-- ReDoc: [http://localhost:8000/redoc](http://localhost:8000/redoc)
+### Option B: Return Assessment & Device Intelligence Console (Port 5001)
+```bash
+python app.py
+```
+- **Intake Wizard:** [http://localhost:5001/](http://localhost:5001/)
+- **Device Intelligence:** [http://localhost:5001/device-assessment](http://localhost:5001/device-assessment)
+
+### Option C: Run 10-Fixture Demo CLI
+```bash
+python run_demo.py
+```
 
 ---
 
-## 🧪 Demonstration & Testing
+## 🧪 Automated Testing
 
-Run all 22 automated tests:
+Run the full automated test suite (75 tests passing):
 ```bash
 python -m pytest -v
 ```
-
-Seed the 10 demonstration devices and run the batch optimizer via curl / API:
+Or run standard unit tests:
 ```bash
-# 1. Seed the 10 synthetic devices
-curl -X POST http://localhost:8000/demo/seed
-
-# 2. Run the 4-slot batch optimizer
-curl -X POST http://localhost:8000/optimize -H "Content-Type: application/json" -d '{"repair_capacity_slots": 4}'
+python -m unittest discover tests
 ```

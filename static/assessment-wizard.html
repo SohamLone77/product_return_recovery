@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intelligent Product Returns &amp; Recovery Engine — Return Assessment</title>
+  <meta name="description" content="Operational reverse logistics return intake and defect assessment engine for high-recovery item grading, defect categorization, and disposition decisioning.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/assessment.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Top Header -->
+    <header class="app-header">
+      <div class="header-inner">
+        <a href="#" id="navBrandLink" class="brand-section">
+          <div class="brand-logo">⚡</div>
+          <div class="brand-title-group">
+            <h1>Returns &amp; Recovery Engine</h1>
+            <div class="brand-subtitle">
+              <span>Reverse Logistics</span>
+              <span class="badge-module">Person 2: Assessment</span>
+            </div>
+          </div>
+        </a>
+
+        <div class="header-actions">
+          <div id="headerApiBadge" class="api-status-badge mock-mode" title="Checking API status...">
+            <span class="status-dot"></span>
+            <span>Connecting...</span>
+          </div>
+          <a href="/device-assessment.html" class="btn btn-outline btn-sm" id="navDeviceAssessmentBtn" title="Launch AI Device Intelligence Module">
+            <span>🔬 AI Device Intelligence</span>
+          </a>
+          <button id="btnStartNewReturn" class="btn btn-primary btn-sm" type="button">
+            <span>+ New Return</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-wrapper">
+
+      <!-- 1. LANDING / OVERVIEW VIEW -->
+      <section id="landingView" class="landing-view">
+        <div class="hero-banner">
+          <div class="hero-content">
+            <div class="hero-tag">
+              <span>Module 2 • Return Assessment Pipeline</span>
+            </div>
+            <h2 class="hero-title">Precision Intake &amp; Condition Assessment</h2>
+            <p class="hero-desc">
+              Grade returned merchandise, categorize technical defects, validate warranty claims,
+              and feed structured condition payloads into the intelligent recovery routing engine.
+            </p>
+            <div class="hero-actions">
+              <button id="btnHeroNewReturn" class="btn btn-primary btn-lg" type="button">
+                <span>Start Return Assessment</span>
+                <span>➔</span>
+              </button>
+              <button id="btnPrefillSample" class="btn btn-secondary btn-lg" type="button">
+                <span>⚡ Pre-fill Sample Return</span>
+              </button>
+              <a href="/device-assessment.html" class="btn btn-outline btn-lg" style="text-decoration:none;">
+                <span>🔬 AI Device Assessment (10 Demo Devices)</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Operational Metrics Grid -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Intake Accuracy</div>
+            <div class="stat-value">99.4%</div>
+            <div class="stat-meta">Verified across 12 product categories</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Avg Assessment Time</div>
+            <div class="stat-value">1.8 min</div>
+            <div class="stat-meta">Optimized 4-step wizard workflow</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Secondary Recovery</div>
+            <div class="stat-value">78.5%</div>
+            <div class="stat-meta">High-retention disposition routing</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">API Contract</div>
+            <div class="stat-value">POST /assessment</div>
+            <div class="stat-meta">Real Backend + Modular Mock Fallback</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. ASSESSMENT WIZARD VIEW -->
+      <section id="wizardView" class="wizard-view">
+        <div class="wizard-card">
+          <!-- Stepper Header -->
+          <div class="stepper-header">
+            <div class="stepper-progress-bar">
+              <div class="stepper-progress-fill"></div>
+            </div>
+            <nav class="stepper-nav" aria-label="Assessment Progress">
+              <button type="button" class="step-indicator-item active" data-step="1">
+                <span class="step-badge">1</span>
+                <span class="step-label-group">
+                  <span class="step-title">Condition</span>
+                  <span class="step-subtitle">Grade &amp; Category</span>
+                </span>
+              </button>
+
+              <button type="button" class="step-indicator-item" data-step="2" disabled>
+                <span class="step-badge">2</span>
+                <span class="step-label-group">
+                  <span class="step-title">Defects</span>
+                  <span class="step-subtitle">Diagnostics &amp; Media</span>
+                </span>
+              </button>
+
+              <button type="button" class="step-indicator-item" data-step="3" disabled>
+                <span class="step-badge">3</span>
+                <span class="step-label-group">
+                  <span class="step-title">Warranty</span>
+                  <span class="step-subtitle">Purchase &amp; Dates</span>
+                </span>
+              </button>
+
+              <button type="button" class="step-indicator-item" data-step="4" disabled>
+                <span class="step-badge">4</span>
+                <span class="step-label-group">
+                  <span class="step-title">Review</span>
+                  <span class="step-subtitle">Verification</span>
+                </span>
+              </button>
+
+              <button type="button" class="step-indicator-item" data-step="5" disabled>
+                <span class="step-badge">5</span>
+                <span class="step-label-group">
+                  <span class="step-title">Receipt</span>
+                  <span class="step-subtitle">Confirmation</span>
+                </span>
+              </button>
+            </nav>
+          </div>
+
+          <!-- Wizard Body -->
+          <div class="wizard-body">
+            <!-- Global Wizard Alert Banner -->
+            <div id="wizardAlertBanner" class="alert-banner" role="alert" style="display: none;"></div>
+
+            <form id="returnAssessmentForm" novalidate onsubmit="return false;">
+
+              <!-- STEP 1: PRODUCT CONDITION -->
+              <div class="step-section active" data-step="1">
+                <div class="section-header">
+                  <h3 class="section-title">
+                    <span>📦 Step 1: Product Condition &amp; Identification</span>
+                  </h3>
+                  <p class="section-desc">
+                    Enter the product identifiers and select the physical grading observed during return intake.
+                  </p>
+                </div>
+
+                <div class="form-grid-2">
+                  <div class="form-group">
+                    <label for="inputProductId" class="form-label">
+                      <span>Product Identifier / SKU <span class="label-required">*</span></span>
+                    </label>
+                    <input
+                      type="text"
+                      id="inputProductId"
+                      class="form-input"
+                      placeholder="e.g. SKU-84920 or PRD-APL-0912"
+                      required
+                      autocomplete="off"
+                    >
+                    <div id="errProductId" class="error-message" role="alert"></div>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="inputProductName" class="form-label">
+                      <span>Product Name / Model</span>
+                      <span class="label-helper">Optional descriptor</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="inputProductName"
+                      class="form-input"
+                      placeholder="e.g. MacBook Pro 14 M3, Galaxy S24 Ultra"
+                      autocomplete="off"
+                    >
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="selectCategory" class="form-label">
+                    <span>Product Category <span class="label-required">*</span></span>
+                  </label>
+                  <select id="selectCategory" class="form-select" required>
+                    <option value="">Select a product category...</option>
+                    <option value="Consumer Electronics">Consumer Electronics</option>
+                    <option value="Smartphones & Tablets">Smartphones &amp; Tablets</option>
+                    <option value="Audio & Wearables">Audio &amp; Wearables</option>
+                    <option value="Home Appliances">Home Appliances</option>
+                    <option value="Computing & Laptops">Computing &amp; Laptops</option>
+                    <option value="Other">Other Category</option>
+                  </select>
+                  <div id="errCategory" class="error-message" role="alert"></div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">
+                    <span>Physical Condition Grade <span class="label-required">*</span></span>
+                    <span class="label-helper">Select visual assessment state</span>
+                  </label>
+
+                  <div class="condition-cards-grid">
+                    <label class="condition-card">
+                      <input type="radio" name="condition" value="New / unopened">
+                      <div class="condition-card-header">
+                        <div class="condition-icon">✨</div>
+                        <span class="condition-grade-badge">Grade A+</span>
+                      </div>
+                      <div class="condition-title">New / unopened</div>
+                      <div class="condition-desc">Factory seal intact, pristine box, never opened or operated.</div>
+                    </label>
+
+                    <label class="condition-card">
+                      <input type="radio" name="condition" value="Like new">
+                      <div class="condition-card-header">
+                        <div class="condition-icon">💎</div>
+                        <span class="condition-grade-badge">Grade A</span>
+                      </div>
+                      <div class="condition-title">Like new</div>
+                      <div class="condition-desc">Opened package, flawless cosmetic state, all accessories present.</div>
+                    </label>
+
+                    <label class="condition-card">
+                      <input type="radio" name="condition" value="Used">
+                      <div class="condition-card-header">
+                        <div class="condition-icon">🔄</div>
+                        <span class="condition-grade-badge">Grade B</span>
+                      </div>
+                      <div class="condition-title">Used</div>
+                      <div class="condition-desc">Signs of normal wear, light micro-scratches, fully functional.</div>
+                    </label>
+
+                    <label class="condition-card">
+                      <label style="position: absolute; inset: 0; cursor: pointer;"></label>
+                      <input type="radio" name="condition" value="Damaged">
+                      <div class="condition-card-header">
+                        <div class="condition-icon">⚠️</div>
+                        <span class="condition-grade-badge">Grade C</span>
+                      </div>
+                      <div class="condition-title">Damaged</div>
+                      <div class="condition-desc">Visible cracks, dents, cosmetic fractures or casing breakage.</div>
+                    </label>
+
+                    <label class="condition-card">
+                      <input type="radio" name="condition" value="Non-functional">
+                      <div class="condition-card-header">
+                        <div class="condition-icon">🛑</div>
+                        <span class="condition-grade-badge">Grade D</span>
+                      </div>
+                      <div class="condition-title">Non-functional</div>
+                      <div class="condition-desc">Does not power on, catastrophic fault or complete operational failure.</div>
+                    </label>
+                  </div>
+                  <div id="errCondition" class="error-message" role="alert"></div>
+                </div>
+              </div>
+
+              <!-- STEP 2: DEFECT INFORMATION -->
+              <div class="step-section" data-step="2">
+                <div class="section-header">
+                  <h3 class="section-title">
+                    <span>🔍 Step 2: Defect Diagnostics &amp; Damage Media</span>
+                  </h3>
+                  <p class="section-desc">
+                    Specify the malfunction classification, visible damage indicators, and optional intake photos.
+                  </p>
+                </div>
+
+                <!-- Conditional Condition Notice -->
+                <div id="conditionDefectNotice" class="alert-banner alert-warning" style="display: none;"></div>
+
+                <div class="form-group">
+                  <label class="form-label">
+                    <span>Defect Category <span class="label-required">*</span></span>
+                    <span class="label-helper">Primary functional or cosmetic issue</span>
+                  </label>
+
+                  <div class="defect-grid">
+                    <label class="defect-pill-card">
+                      <input type="radio" name="defectCategory" value="No defect">
+                      <span class="defect-pill-title">✅ No defect</span>
+                    </label>
+                    <label class="defect-pill-card">
+                      <input type="radio" name="defectCategory" value="Battery issue">
+                      <span class="defect-pill-title">🔋 Battery issue</span>
+                    </label>
+                    <label class="defect-pill-card">
+                      <input type="radio" name="defectCategory" value="Display or screen damage">
+                      <span class="defect-pill-title">📱 Display or screen damage</span>
+                    </label>
+                    <label class="defect-pill-card">
+                      <input type="radio" name="defectCategory" value="Charging or connectivity issue">
+                      <span class="defect-pill-title">🔌 Charging or connectivity</span>
+                    </label>
+                    <label class="defect-pill-card">
+                      <input type="radio" name="defectCategory" value="Hardware failure">
+                      <span class="defect-pill-title">⚙️ Hardware failure</span>
+                    </label>
+                    <label class="defect-pill-card">
+                      <input type="radio" name="defectCategory" value="Software issue">
+                      <span class="defect-pill-title">💻 Software issue</span>
+                    </label>
+                    <label class="defect-pill-card">
+                      <input type="radio" name="defectCategory" value="Liquid damage">
+                      <span class="defect-pill-title">💧 Liquid damage</span>
+                    </label>
+                    <label class="defect-pill-card">
+                      <input type="radio" name="defectCategory" value="Other">
+                      <span class="defect-pill-title">📝 Other defect</span>
+                    </label>
+                  </div>
+                  <div id="errDefectCategory" class="error-message" role="alert"></div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">
+                    <span>Visible Damage <span class="label-required">*</span></span>
+                    <span class="label-helper">External cracks, scratches, stains, or bent frames</span>
+                  </label>
+                  <div class="toggle-group">
+                    <label class="toggle-pill toggle-damage-pill">
+                      <input type="radio" name="visibleDamage" value="no">
+                      <span>No Visible Damage</span>
+                    </label>
+                    <label class="toggle-pill toggle-damage-pill">
+                      <input type="radio" name="visibleDamage" value="yes">
+                      <span>Yes, Visible Damage</span>
+                    </label>
+                  </div>
+                  <div id="errVisibleDamage" class="error-message" role="alert"></div>
+                </div>
+
+                <div class="form-group">
+                  <label for="textareaDefectDesc" class="form-label">
+                    <span>
+                      Defect Description
+                      <span id="labelDefectDescRequired" class="label-required" style="display: none;">*</span>
+                    </span>
+                    <span class="label-helper">Required when 'Other', 'Damaged', or 'Non-functional'</span>
+                  </label>
+                  <textarea
+                    id="textareaDefectDesc"
+                    class="form-textarea"
+                    rows="3"
+                    maxlength="500"
+                    placeholder="Provide diagnostic observations or user-reported symptoms..."
+                  ></textarea>
+                  <div class="char-counter" id="charCountDefectDesc">0/500</div>
+                  <div id="errDefectDesc" class="error-message" role="alert"></div>
+                </div>
+
+                <!-- Optional Damage Image Upload -->
+                <div class="form-group">
+                  <label class="form-label">
+                    <span>Damage Photo Upload</span>
+                    <span class="label-helper">Optional • PNG, JPG, WEBP (Max 5MB)</span>
+                  </label>
+
+                  <input type="file" id="fileDamageImage" accept="image/*" style="display: none;">
+
+                  <div id="damageImageDropzone" class="upload-dropzone" tabindex="0" role="button" aria-label="Upload photo of product damage">
+                    <div class="upload-icon">📷</div>
+                    <div class="upload-instructions">Click or drag &amp; drop product inspection photo</div>
+                    <div class="upload-subtext">Supports PNG, JPG, or WEBP up to 5MB</div>
+                  </div>
+
+                  <div id="damageImagePreview" class="image-preview-card" style="display: none;">
+                    <img id="damagePreviewThumb" class="image-preview-thumb" src="" alt="Damage Preview">
+                    <div class="image-preview-info">
+                      <div id="damagePreviewName" class="image-preview-name">image.jpg</div>
+                      <div id="damagePreviewMeta" class="image-preview-meta">0 KB</div>
+                    </div>
+                    <button type="button" id="btnRemoveDamageImage" class="btn btn-outline btn-sm">Remove</button>
+                  </div>
+
+                  <div id="errImageUpload" class="error-message" role="alert"></div>
+                </div>
+              </div>
+
+              <!-- STEP 3: WARRANTY INFORMATION -->
+              <div class="step-section" data-step="3">
+                <div class="section-header">
+                  <h3 class="section-title">
+                    <span>🛡️ Step 3: Warranty Verification &amp; Purchase History</span>
+                  </h3>
+                  <p class="section-desc">
+                    Record customer purchase dates and warranty coverage parameters for manufacturer disposition routing.
+                  </p>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">
+                    <span>Warranty Status <span class="label-required">*</span></span>
+                    <span class="label-helper">Customer declared coverage tier</span>
+                  </label>
+
+                  <div class="warranty-cards-grid">
+                    <label class="warranty-option-card">
+                      <input type="radio" name="warrantyStatus" value="In warranty">
+                      <div class="warranty-option-title">✅ In warranty</div>
+                      <div class="label-helper" style="margin-top: 0.25rem;">Active OEM or store warranty</div>
+                    </label>
+
+                    <label class="warranty-option-card">
+                      <input type="radio" name="warrantyStatus" value="Expired">
+                      <div class="warranty-option-title">⌛ Expired</div>
+                      <div class="label-helper" style="margin-top: 0.25rem;">Passed warranty period</div>
+                    </label>
+
+                    <label class="warranty-option-card">
+                      <input type="radio" name="warrantyStatus" value="Unknown">
+                      <div class="warranty-option-title">❓ Unknown</div>
+                      <div class="label-helper" style="margin-top: 0.25rem;">Receipt or coverage unverified</div>
+                    </label>
+                  </div>
+                  <div id="errWarrantyStatus" class="error-message" role="alert"></div>
+                </div>
+
+                <div class="form-grid-2">
+                  <div class="form-group">
+                    <label for="inputPurchaseDate" class="form-label">
+                      <span>Purchase Date <span class="label-required">*</span></span>
+                      <span class="label-helper">Must not be in the future</span>
+                    </label>
+                    <input type="date" id="inputPurchaseDate" class="form-input" required>
+                    <div id="errPurchaseDate" class="error-message" role="alert"></div>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="inputWarrantyExpiryDate" class="form-label">
+                      <span>Warranty Expiry Date</span>
+                      <span class="label-helper">Must be after purchase date</span>
+                    </label>
+                    <input type="date" id="inputWarrantyExpiryDate" class="form-input">
+                    <div id="errExpiryDate" class="error-message" role="alert"></div>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="inputProofOfPurchase" class="form-label">
+                    <span>Proof of Purchase / Invoice Reference</span>
+                    <span class="label-helper">Optional reference number or receipt ID</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="inputProofOfPurchase"
+                    class="form-input"
+                    placeholder="e.g. INV-2025-98314 or ORDER-AMZ-01824"
+                    autocomplete="off"
+                  >
+                </div>
+
+                <div class="warranty-notice-box">
+                  <span>ℹ️</span>
+                  <span>
+                    Note: Self-reported warranty status is subject to OEM serial number cross-referencing during downstream disposition routing.
+                  </span>
+                </div>
+              </div>
+
+              <!-- STEP 4: REVIEW AND SUBMIT -->
+              <div class="step-section" data-step="4">
+                <div class="section-header">
+                  <h3 class="section-title">
+                    <span>📋 Step 4: Review Assessment &amp; Confirm Dispatch</span>
+                  </h3>
+                  <p class="section-desc">
+                    Verify all intake details before submitting to the decision and recovery routing engine.
+                  </p>
+                </div>
+
+                <div class="review-grid">
+                  <!-- Product Summary Card -->
+                  <div class="review-card">
+                    <div class="review-card-header">
+                      <div class="review-card-title">📦 Product &amp; Condition</div>
+                      <button type="button" class="review-edit-btn" data-target-step="1">Edit Step 1</button>
+                    </div>
+                    <div id="reviewProductSection"></div>
+                  </div>
+
+                  <!-- Defect Summary Card -->
+                  <div class="review-card">
+                    <div class="review-card-header">
+                      <div class="review-card-title">🔍 Defect Diagnostics</div>
+                      <button type="button" class="review-edit-btn" data-target-step="2">Edit Step 2</button>
+                    </div>
+                    <div id="reviewDefectSection"></div>
+                  </div>
+
+                  <!-- Warranty Summary Card -->
+                  <div class="review-card">
+                    <div class="review-card-header">
+                      <div class="review-card-title">🛡️ Warranty Coverage</div>
+                      <button type="button" class="review-edit-btn" data-target-step="3">Edit Step 3</button>
+                    </div>
+                    <div id="reviewWarrantySection"></div>
+                  </div>
+                </div>
+
+                <div class="review-ack-box">
+                  <input type="checkbox" id="checkboxReviewAck">
+                  <label for="checkboxReviewAck" class="review-ack-label">
+                    I verify that the physical condition, defects, and warranty data recorded above accurately represent the returned item.
+                  </label>
+                </div>
+                <div id="errReviewAck" class="error-message" role="alert" style="margin-top: -1.25rem; margin-bottom: 1.5rem;"></div>
+              </div>
+
+              <!-- STEP 5: CONFIRMATION RECEIPT -->
+              <div class="step-section" data-step="5">
+                <div class="confirmation-container">
+                  <div class="success-icon-wrap">✓</div>
+                  <h3 class="confirm-title">Return Assessment Recorded</h3>
+                  <p class="confirm-subtitle">
+                    The item condition and diagnostic profile have been ingested and routed to the disposition engine.
+                  </p>
+
+                  <div class="assessment-id-badge">
+                    <span>ID:</span>
+                    <span id="confirmAssessmentId">ASM-20261010-0000</span>
+                    <button type="button" id="btnCopyAssessmentId" class="copy-id-btn" title="Copy Assessment ID">📋</button>
+                  </div>
+
+                  <div style="margin-bottom: 1.5rem;">
+                    <div id="confirmBackendModeBadge" class="api-status-badge" style="display: inline-flex;">
+                      <span class="status-dot"></span>
+                      <span>Live Backend (POST /assessment)</span>
+                    </div>
+                  </div>
+
+                  <!-- Preliminary Disposition Recommendation Card -->
+                  <div class="disposition-summary-card">
+                    <div class="disposition-header">
+                      <strong style="font-size: 0.95rem;">Preliminary Recovery Recommendation</strong>
+                      <span id="confirmDispositionRoute" class="disposition-pill">REFURBISH</span>
+                    </div>
+                    <div style="margin-bottom: 0.75rem; font-size: 0.9rem; color: var(--emerald-400); font-weight: 600;" id="confirmRecoveryRatio">
+                      75% Value Retention
+                    </div>
+                    <div id="confirmDispositionAction" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                      Stage product for authorized refurbishment or return verification.
+                    </div>
+                    <div style="margin-top: 1rem; font-size: 0.75rem; color: var(--text-muted);">
+                      Recorded at: <span id="confirmTimestamp">—</span>
+                    </div>
+                  </div>
+
+                  <div class="confirm-actions">
+                    <button type="button" id="btnConfirmNewReturn" class="btn btn-primary btn-lg">
+                      <span>+ Process Another Return</span>
+                    </button>
+                    <button type="button" id="btnConfirmPrint" class="btn btn-secondary btn-lg">
+                      <span>🖨️ Print Assessment Receipt</span>
+                    </button>
+                    <button type="button" id="btnBackToDashboard" class="btn btn-outline btn-lg">
+                      <span>Back to Dashboard</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+            </form>
+          </div>
+
+          <!-- Wizard Navigation Footer -->
+          <footer class="wizard-footer">
+            <div class="wizard-footer-left">
+              <button type="button" id="btnWizardPrev" class="btn btn-secondary" style="display: none;">
+                <span>← Previous</span>
+              </button>
+            </div>
+            <div class="wizard-footer-right">
+              <button type="button" id="btnWizardNext" class="btn btn-primary">
+                <span>Continue</span>
+                <span>→</span>
+              </button>
+              <button type="button" id="btnWizardSubmit" class="btn btn-primary" style="display: none;">
+                <span>Submit Assessment</span>
+                <span>➔</span>
+              </button>
+            </div>
+          </footer>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Global App Footer -->
+    <footer class="app-footer">
+      <div class="footer-inner">
+        <div>
+          <strong>Intelligent Product Returns &amp; Recovery Engine</strong> • Person 2: Return Assessment
+        </div>
+        <div>
+          <span>Endpoint: <code>POST /assessment</code></span> •
+          <span>Schema: ISO-8601 &amp; Reverse Logistics Spec</span>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/api/assessmentApi.js"></script>
+  <script src="js/components/wizard.js"></script>
+  <script src="js/components/conditionStep.js"></script>
+  <script src="js/components/defectStep.js"></script>
+  <script src="js/components/warrantyStep.js"></script>
+  <script src="js/components/reviewStep.js"></script>
+  <script src="js/components/confirmationStep.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
