@@ -87,9 +87,9 @@
         <span class="nav-label">Review Queue</span>
         <span class="nav-badge nav-badge-alert" id="badge-review">2</span>
       </li>
-      <li class="nav-item" data-tab="demo-guide" onclick="App.switchTab('demo-guide')">
-        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
-        <span class="nav-label">Demo Guide</span>
+      <li class="nav-item" data-tab="questionnaire" onclick="App.switchTab('questionnaire')">
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/><line x1="9" y1="11" x2="15" y2="11"/><path d="M9 7h2"/></svg></span>
+        <span class="nav-label">Intake Questionnaire</span>
       </li>
     </ul>
   </nav>
@@ -682,57 +682,411 @@
       <div id="device-detail-content"><div class="empty-state"><p>Select a device from the inventory.</p></div></div>
     </section>
 
-    <!-- TAB: DEMO GUIDE (Feature H) -->
-    <section class="tab-pane" id="tab-demo-guide">
+    <!-- TAB: ASSESSMENT QUESTIONNAIRE -->
+    <section class="tab-pane" id="tab-questionnaire">
       <div class="section-header">
         <div>
-          <h2 class="section-title">Hackathon Judge Demo Guide</h2>
-          <p class="section-subtitle">Interactive 8-step walkthrough demonstrating the full end-to-end recovery engine experience</p>
+          <h2 class="section-title">Product Return Assessment &amp; Intake Questionnaire</h2>
+          <p class="section-subtitle">Multi-point diagnostic intake protocol. Evaluates device defects, warranty claims, fraud signals, and computes real-time net recovery disposition.</p>
+        </div>
+        <div class="header-actions">
+          <div class="preset-dropdown-wrap">
+            <label for="q-preset-selector" class="preset-label">Test Case Presets:</label>
+            <select id="q-preset-selector" class="form-select form-select-sm" onchange="App.loadQuestionnairePreset(this.value)">
+              <option value="">-- Quick Load Return Preset --</option>
+              <option value="preset-phone-cracked">Flagship Phone (Screen Cracked, High-Value Resale)</option>
+              <option value="preset-laptop-battery">Workstation Laptop (Swollen Battery, Safety Hazard)</option>
+              <option value="preset-earbuds-fake">Wireless Earbuds (Counterfeit Replica, Fraud Flag)</option>
+              <option value="preset-tv-warranty">OLED Smart TV (Panel Failure, Active OEM Warranty)</option>
+              <option value="preset-watch-clean">Smart Fitness Watch (Like-New Open Box Restock)</option>
+            </select>
+          </div>
+          <button class="btn btn-secondary btn-sm" type="button" onclick="App.resetQuestionnaire()">Reset Form</button>
         </div>
       </div>
 
-      <div class="demo-steps-grid">
-        <div class="demo-step-card">
-          <div class="demo-step-header"><span class="step-chip">Step 1</span><h4>Seed &amp; Load 10 Returned Devices</h4></div>
-          <p>Populate the database with the 10 canonical devices exhibiting diverse defects, warranties, and risks.</p>
-          <button class="btn btn-primary btn-sm" onclick="App.seedAndRun()">Run Step 1 (Seed &amp; Optimize)</button>
+      <!-- Stepper Indicator -->
+      <div class="wizard-stepper" id="q-stepper">
+        <div class="stepper-step active" data-step="1" onclick="App.goToQuestionnaireStep(1)">
+          <span class="step-num">1</span>
+          <div class="step-meta">
+            <span class="step-title">Product &amp; Order</span>
+            <span class="step-desc">SKU, pricing &amp; claim</span>
+          </div>
         </div>
-        <div class="demo-step-card">
-          <div class="demo-step-header"><span class="step-chip">Step 2</span><h4>Inspect Return Inventory &amp; Triage</h4></div>
-          <p>Observe condition grades, repairability percentages, authenticity scores, and warranty eligibility across devices.</p>
-          <button class="btn btn-secondary btn-sm" onclick="App.switchTab('inventory')">Open Inventory Tab</button>
+        <div class="stepper-step" data-step="2" onclick="App.goToQuestionnaireStep(2)">
+          <span class="step-num">2</span>
+          <div class="step-meta">
+            <span class="step-title">Condition &amp; Defect</span>
+            <span class="step-desc">Physical diagnostics</span>
+          </div>
         </div>
-        <div class="demo-step-card">
-          <div class="demo-step-header"><span class="step-chip">Step 3</span><h4>Deep-Dive Single Device Economics</h4></div>
-          <p>Open <em>Flagship Smartphone 15 Pro</em>. Inspect all 7 alternative routes, feasibility reasons, and evidence-based explanation.</p>
-          <button class="btn btn-secondary btn-sm" onclick="App.openFirstDeviceDetail()">Inspect Smartphone 15 Pro</button>
+        <div class="stepper-step" data-step="3" onclick="App.goToQuestionnaireStep(3)">
+          <span class="step-num">3</span>
+          <div class="step-meta">
+            <span class="step-title">Warranty &amp; Audit</span>
+            <span class="step-desc">Proof &amp; coverage</span>
+          </div>
         </div>
-        <div class="demo-step-card">
-          <div class="demo-step-header"><span class="step-chip">Step 4</span><h4>Review Repair-Slot Knapsack (K=4)</h4></div>
-          <p>Verify that 4 slots are awarded strictly by incremental repair benefit over the best non-repair fallback.</p>
-          <button class="btn btn-secondary btn-sm" onclick="App.switchTab('allocation')">Open Repair Slots Tab</button>
+        <div class="stepper-step" data-step="4" onclick="App.goToQuestionnaireStep(4)">
+          <span class="step-num">4</span>
+          <div class="step-meta">
+            <span class="step-title">Risk &amp; Safety</span>
+            <span class="step-desc">Counterfeit &amp; hazard</span>
+          </div>
         </div>
-        <div class="demo-step-card">
-          <div class="demo-step-header"><span class="step-chip">Step 5</span><h4>Evaluate Uplift vs Baseline Heuristics</h4></div>
-          <p>Verify rigorous economic uplift over FIFO arrival order and Cheapest-Repair-First heuristics without invented data.</p>
-          <button class="btn btn-secondary btn-sm" onclick="App.switchTab('comparison')">Open Baseline vs Opt</button>
-        </div>
-        <div class="demo-step-card">
-          <div class="demo-step-header"><span class="step-chip">Step 6</span><h4>What-If Simulator: Cut Capacity to K=2</h4></div>
-          <p>Tighter capacity forces the engine to demote Tablet and TV to fallback routes, recalculating aggregate net recovery.</p>
-          <button class="btn btn-secondary btn-sm" onclick="App.runPresetK2()">Simulate K=2 Constraint</button>
-        </div>
-        <div class="demo-step-card">
-          <div class="demo-step-header"><span class="step-chip">Step 7</span><h4>Investigate Manual-Review Queue</h4></div>
-          <p>Inspect the 2 held returns (Counterfeit Earbuds and Swollen Lithium Laptop) and test interactive review verification.</p>
-          <button class="btn btn-secondary btn-sm" onclick="App.switchTab('review-queue')">Open Review Queue</button>
-        </div>
-        <div class="demo-step-card">
-          <div class="demo-step-header"><span class="step-chip">Step 8</span><h4>Review Operational Analytics Charts</h4></div>
-          <p>Inspect all 6 live Chart.js visualizations (Disposition, Net Recovery, Route Comparison, Costs vs Proceeds, Bench Cutoff, Risk).</p>
-          <button class="btn btn-secondary btn-sm" onclick="App.switchTab('charts')">Open Analytics Tab</button>
+        <div class="stepper-step" data-step="5" onclick="App.goToQuestionnaireStep(5)">
+          <span class="step-num">5</span>
+          <div class="step-meta">
+            <span class="step-title">Financials</span>
+            <span class="step-desc">Costs, resale &amp; salvage</span>
+          </div>
         </div>
       </div>
+
+      <!-- Questionnaire Form -->
+      <form id="questionnaire-form" onsubmit="App.submitQuestionnaire(event)" class="q-form-container">
+
+        <!-- STEP 1: Product & Order Details -->
+        <div class="q-step-panel active" id="q-step-1">
+          <div class="q-panel-card">
+            <div class="q-panel-header">
+              <span class="q-panel-badge">Step 1 of 5</span>
+              <h3>Product &amp; Return Intake Information</h3>
+              <p>Register the product return identifiers, purchase value, and initial customer claim.</p>
+            </div>
+            <div class="q-grid-2">
+              <div class="form-group">
+                <label for="q-product-name">Product Name / Title <span class="req">*</span></label>
+                <input type="text" id="q-product-name" class="form-input" placeholder="e.g. Flagship Smartphone 15 Pro 256GB" required>
+                <small class="form-hint">Official model name or retail title</small>
+              </div>
+              <div class="form-group">
+                <label for="q-product-id">Product SKU / Catalog ID <span class="req">*</span></label>
+                <input type="text" id="q-product-id" class="form-input" placeholder="e.g. SKU-PHONE-15P" required>
+                <small class="form-hint">Unique master inventory SKU</small>
+              </div>
+              <div class="form-group">
+                <label for="q-category">Product Category <span class="req">*</span></label>
+                <select id="q-category" class="form-select" required>
+                  <option value="Smartphone">Smartphone</option>
+                  <option value="Laptop">Laptop / Notebook</option>
+                  <option value="Tablet">Tablet</option>
+                  <option value="Audio">Audio / Headphones</option>
+                  <option value="Smartwatch">Smartwatch / Wearable</option>
+                  <option value="Television">Television / Display</option>
+                  <option value="Gaming">Gaming Console</option>
+                  <option value="Appliance">Home Appliance</option>
+                  <option value="Electronics">Other Electronics</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="q-purchase-price">Original Purchase Price ($) <span class="req">*</span></label>
+                <input type="number" id="q-purchase-price" class="form-input" min="0" step="0.01" placeholder="999.00" required>
+                <small class="form-hint">Customer retail purchase invoice price</small>
+              </div>
+              <div class="form-group">
+                <label for="q-customer-id">Customer Identifier <span class="req">*</span></label>
+                <input type="text" id="q-customer-id" class="form-input" placeholder="e.g. CUST-9021" required>
+              </div>
+              <div class="form-group">
+                <label for="q-order-id">Original Sales Order ID</label>
+                <input type="text" id="q-order-id" class="form-input" placeholder="e.g. ORD-2024-8841">
+              </div>
+            </div>
+            <div class="form-group full-width" style="margin-top: 14px;">
+              <label for="q-return-reason">Customer Stated Return Reason</label>
+              <input type="text" id="q-return-reason" class="form-input" placeholder="e.g. Display glass cracked; touch digitizer erratic">
+            </div>
+            <div class="q-actions">
+              <div></div>
+              <button type="button" class="btn btn-primary" onclick="App.goToQuestionnaireStep(2)">
+                Proceed to Condition &amp; Defect &rarr;
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 2: Physical Condition & Damage Diagnostics -->
+        <div class="q-step-panel" id="q-step-2">
+          <div class="q-panel-card">
+            <div class="q-panel-header">
+              <span class="q-panel-badge">Step 2 of 5</span>
+              <h3>Physical Condition &amp; Defect Classification</h3>
+              <p>Inspect exterior cosmetic state, enclosure structural integrity, and observable faults.</p>
+            </div>
+
+            <label class="form-label-bold">Observed Physical Condition Grade <span class="req">*</span></label>
+            <div class="condition-selector-grid">
+              <label class="condition-card-opt">
+                <input type="radio" name="q-product-condition" value="unopened" required>
+                <div class="opt-body">
+                  <span class="opt-tag tag-unopened">Unopened</span>
+                  <strong>Factory Sealed</strong>
+                  <p>Original packaging intact with OEM security seals</p>
+                </div>
+              </label>
+              <label class="condition-card-opt">
+                <input type="radio" name="q-product-condition" value="like_new">
+                <div class="opt-body">
+                  <span class="opt-tag tag-like-new">Like New</span>
+                  <strong>Pristine / Open Box</strong>
+                  <p>No scratches or cosmetic blemishes; packaging opened</p>
+                </div>
+              </label>
+              <label class="condition-card-opt">
+                <input type="radio" name="q-product-condition" value="minor_damage">
+                <div class="opt-body">
+                  <span class="opt-tag tag-minor">Minor Damage</span>
+                  <strong>Surface Scuffs</strong>
+                  <p>Light micro-scratches, minor chassis scuffs, fully works</p>
+                </div>
+              </label>
+              <label class="condition-card-opt">
+                <input type="radio" name="q-product-condition" value="defective" checked>
+                <div class="opt-body">
+                  <span class="opt-tag tag-defective">Defective</span>
+                  <strong>Functional Fault</strong>
+                  <p>Component or operational breakdown; exterior intact</p>
+                </div>
+              </label>
+              <label class="condition-card-opt">
+                <input type="radio" name="q-product-condition" value="major_damage">
+                <div class="opt-body">
+                  <span class="opt-tag tag-major">Major Damage</span>
+                  <strong>Heavy Impact / Broken</strong>
+                  <p>Cracked screen, crushed housing, bent frame</p>
+                </div>
+              </label>
+            </div>
+
+            <div class="q-grid-2" style="margin-top: 18px;">
+              <div class="form-group">
+                <label for="q-defect-category">Defect Classification <span class="req">*</span></label>
+                <select id="q-defect-category" class="form-select" required>
+                  <option value="functional">Functional (Hardware / Component malfunction)</option>
+                  <option value="cosmetic">Cosmetic (Scratches / Dents / Scuffs)</option>
+                  <option value="electrical">Electrical (Power failure / Charging / Battery)</option>
+                  <option value="missing_parts">Missing Parts / Accessories</option>
+                  <option value="none">None (No defect detected)</option>
+                  <option value="other">Other / Miscellaneous</option>
+                </select>
+              </div>
+              <div class="form-group checkbox-align">
+                <label class="checkbox-container">
+                  <input type="checkbox" id="q-visible-damage" checked>
+                  <span class="checkbox-custom"></span>
+                  <span class="checkbox-text">
+                    <strong>Visible Physical Damage Observable</strong>
+                    <small>Cracks, dented casing, liquid ingress discoloration</small>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group full-width" style="margin-top: 12px;">
+              <label for="q-defect-description">Technician Defect Description</label>
+              <textarea id="q-defect-description" class="form-textarea" rows="2" placeholder="Detail observed defects, cracks, diagnostic symptoms..."></textarea>
+            </div>
+
+            <div class="q-actions">
+              <button type="button" class="btn btn-secondary" onclick="App.goToQuestionnaireStep(1)">&larr; Back</button>
+              <button type="button" class="btn btn-primary" onclick="App.goToQuestionnaireStep(3)">Proceed to Warranty &rarr;</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 3: Warranty & Documentation Audit -->
+        <div class="q-step-panel" id="q-step-3">
+          <div class="q-panel-card">
+            <div class="q-panel-header">
+              <span class="q-panel-badge">Step 3 of 5</span>
+              <h3>Warranty Status &amp; Documentation Audit</h3>
+              <p>Verify coverage validity and authorized purchase records for potential OEM warranty reimbursement.</p>
+            </div>
+
+            <div class="q-grid-2">
+              <div class="form-group">
+                <label for="q-warranty-status">Manufacturer Warranty Status <span class="req">*</span></label>
+                <select id="q-warranty-status" class="form-select" required onchange="App.onWarrantyStatusChange()">
+                  <option value="active">Active (Within OEM coverage window)</option>
+                  <option value="expired">Expired (Warranty elapsed)</option>
+                  <option value="none">None (No warranty coverage)</option>
+                  <option value="unknown">Unknown / Unspecified</option>
+                </select>
+              </div>
+              <div class="form-group checkbox-align">
+                <label class="checkbox-container">
+                  <input type="checkbox" id="q-verified-warranty-eligible">
+                  <span class="checkbox-custom"></span>
+                  <span class="checkbox-text">
+                    <strong>Independently Verified Warranty Eligible</strong>
+                    <small>Validated against manufacturer OEM warranty database</small>
+                  </span>
+                </label>
+              </div>
+              <div class="form-group">
+                <label for="q-purchase-date">Original Purchase Date</label>
+                <input type="date" id="q-purchase-date" class="form-input">
+              </div>
+              <div class="form-group">
+                <label for="q-warranty-expiry">Warranty Expiration Date</label>
+                <input type="date" id="q-warranty-expiry" class="form-input">
+              </div>
+            </div>
+
+            <div class="q-grid-2" style="margin-top: 14px;">
+              <div class="form-group checkbox-align">
+                <label class="checkbox-container">
+                  <input type="checkbox" id="q-proof-verified" checked>
+                  <span class="checkbox-custom"></span>
+                  <span class="checkbox-text">
+                    <strong>Proof of Purchase Receipt Verified</strong>
+                    <small>Authorized retailer invoice matches customer &amp; serial</small>
+                  </span>
+                </label>
+              </div>
+              <div class="form-group">
+                <label for="q-assessor-notes">Technician Inspection Remarks</label>
+                <input type="text" id="q-assessor-notes" class="form-input" placeholder="e.g. Serial registered in OEM database; eligible for vendor claim">
+              </div>
+            </div>
+
+            <div class="q-actions">
+              <button type="button" class="btn btn-secondary" onclick="App.goToQuestionnaireStep(2)">&larr; Back</button>
+              <button type="button" class="btn btn-primary" onclick="App.goToQuestionnaireStep(4)">Proceed to Risk &amp; Safety &rarr;</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 4: Authenticity & Safety Inspection -->
+        <div class="q-step-panel" id="q-step-4">
+          <div class="q-panel-card">
+            <div class="q-panel-header">
+              <span class="q-panel-badge">Step 4 of 5</span>
+              <h3>Authenticity Risk &amp; Safety Hazard Protocol</h3>
+              <p>Scan for counterfeit parts, unauthorized modifications, and hazardous battery/electrical conditions.</p>
+            </div>
+
+            <!-- Safety Hazard Alert Banner -->
+            <div class="safety-hazard-box" id="hazard-box-card">
+              <label class="checkbox-container hazard-toggle">
+                <input type="checkbox" id="q-safety-hazard" onchange="App.onSafetyHazardToggle()">
+                <span class="checkbox-custom hazard-box-custom"></span>
+                <span class="checkbox-text">
+                  <span class="hazard-badge-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    CRITICAL SAFETY HAZARD DETECTED
+                  </span>
+                  <p>Swollen lithium-ion battery, thermal burns, exposed high-voltage wiring, or chemical leakage. <em>(Automatically routes device to HOLD_MANUAL_REVIEW or eco-recycling)</em></p>
+                </span>
+              </label>
+            </div>
+
+            <div class="form-group" style="margin-top: 18px;">
+              <div class="slider-header-wrap">
+                <label for="q-authenticity-risk">Authenticity / Counterfeit Risk Score:</label>
+                <span class="slider-val-badge" id="q-auth-risk-val">0.05 (Low Risk / Authentic)</span>
+              </div>
+              <input type="range" id="q-authenticity-risk" min="0" max="1" step="0.05" value="0.05" class="range-slider" oninput="App.updateAuthRiskDisplay(this.value)">
+              <div class="slider-axis-labels">
+                <span>0.00 Verified OEM</span>
+                <span>0.50 Suspicious Origin</span>
+                <span>1.00 Confirmed Clone / Counterfeit</span>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 16px;">
+              <label class="form-label-bold">Observed Fraud &amp; Anomaly Signals:</label>
+              <div class="fraud-flags-grid">
+                <label class="checkbox-container">
+                  <input type="checkbox" name="q-fraud-flag" value="serial_mismatch">
+                  <span class="checkbox-custom"></span>
+                  <span class="checkbox-text">Serial number mismatch between retail box and device chassis</span>
+                </label>
+                <label class="checkbox-container">
+                  <input type="checkbox" name="q-fraud-flag" value="counterfeit_suspected">
+                  <span class="checkbox-custom"></span>
+                  <span class="checkbox-text">Non-OEM materials, incorrect weight, third-party counterfeit replica</span>
+                </label>
+                <label class="checkbox-container">
+                  <input type="checkbox" name="q-fraud-flag" value="parts_swapped">
+                  <span class="checkbox-custom"></span>
+                  <span class="checkbox-text">Tampered screw seals, missing OEM chips, swapped internal components</span>
+                </label>
+                <label class="checkbox-container">
+                  <input type="checkbox" name="q-fraud-flag" value="liquid_damage_hidden">
+                  <span class="checkbox-custom"></span>
+                  <span class="checkbox-text">Liquid contact indicator (LCI) tripped pink/red inside ports</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="q-actions">
+              <button type="button" class="btn btn-secondary" onclick="App.goToQuestionnaireStep(3)">&larr; Back</button>
+              <button type="button" class="btn btn-primary" onclick="App.goToQuestionnaireStep(5)">Proceed to Financials &rarr;</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 5: Technical Feasibility & Financial Engineering -->
+        <div class="q-step-panel" id="q-step-5">
+          <div class="q-panel-card">
+            <div class="q-panel-header">
+              <span class="q-panel-badge">Step 5 of 5</span>
+              <h3>Technical Feasibility &amp; Financial Estimates</h3>
+              <p>Engineering parameters for repair viability, parts costs, secondary market resale, and salvage recovery value.</p>
+            </div>
+
+            <div class="q-grid-3">
+              <div class="form-group">
+                <div class="slider-header-wrap">
+                  <label for="q-repair-probability">Repair Success Prob. (p):</label>
+                  <span class="slider-val-badge" id="q-repair-prob-val">85%</span>
+                </div>
+                <input type="range" id="q-repair-probability" min="0" max="1" step="0.05" value="0.85" class="range-slider" oninput="App.updateRepairProbDisplay(this.value)">
+                <small class="form-hint">Probability of successful repair</small>
+              </div>
+              <div class="form-group">
+                <label for="q-repair-cost">Estimated Repair Cost ($) <span class="req">*</span></label>
+                <input type="number" id="q-repair-cost" class="form-input" min="0" step="1.0" value="120.00" required>
+                <small class="form-hint">Parts + bench labor cost</small>
+              </div>
+              <div class="form-group">
+                <label for="q-repair-hours">Bench Labor Hours</label>
+                <input type="number" id="q-repair-hours" class="form-input" min="0" step="0.25" value="1.5">
+                <small class="form-hint">Required technician station hours</small>
+              </div>
+            </div>
+
+            <div class="q-grid-2" style="margin-top: 14px;">
+              <div class="form-group">
+                <label for="q-resale-value">Potential Resale Value V ($) <span class="req">*</span></label>
+                <input type="number" id="q-resale-value" class="form-input" min="0" step="1.0" value="750.00" required>
+                <small class="form-hint">Projected secondary selling price if refurbished/repaired</small>
+              </div>
+              <div class="form-group">
+                <label for="q-parts-value">Parts Salvage / Harvest Value ($) <span class="req">*</span></label>
+                <input type="number" id="q-parts-value" class="form-input" min="0" step="1.0" value="280.00" required>
+                <small class="form-hint">Recoverable component salvage value if disassembled</small>
+              </div>
+            </div>
+
+            <div class="q-actions">
+              <button type="button" class="btn btn-secondary" onclick="App.goToQuestionnaireStep(4)">&larr; Back</button>
+              <button type="submit" class="btn btn-primary btn-lg" id="btn-submit-questionnaire">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                Submit Assessment &amp; Run Optimization
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </form>
+
+      <!-- LIVE REAL-TIME DECISION RESULT PANEL -->
+      <div id="q-decision-result" class="q-result-container" style="display: none;"></div>
+
     </section>
 
   </main>

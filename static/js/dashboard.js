@@ -1218,6 +1218,531 @@ export async function simulateReviewAction(return_id, actionType) {
 }
 
 // WINDOW API ATTACHMENT
+
+// =============================================================================
+// QUESTIONNAIRE INTAKE & EVALUATION ENGINE
+// =============================================================================
+
+export function goToQuestionnaireStep(stepNum) {
+  const steps = document.querySelectorAll('#q-stepper .stepper-step');
+  steps.forEach(s => {
+    const sNum = parseInt(s.dataset.step, 10);
+    s.classList.remove('active');
+    if (sNum < stepNum) {
+      s.classList.add('completed');
+    } else {
+      s.classList.remove('completed');
+    }
+    if (sNum === stepNum) {
+      s.classList.add('active');
+    }
+  });
+
+  document.querySelectorAll('.q-step-panel').forEach(p => p.classList.remove('active'));
+  const target = $(`q-step-${stepNum}`);
+  if (target) {
+    target.classList.add('active');
+    target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+export function updateAuthRiskDisplay(val) {
+  const num = parseFloat(val);
+  const badge = $('q-auth-risk-val');
+  if (!badge) return;
+  let label = 'Low Risk / Authentic';
+  if (num >= 0.7) label = 'Confirmed Counterfeit Risk';
+  else if (num >= 0.35) label = 'Suspicious Origin';
+  badge.textContent = `${num.toFixed(2)} (${label})`;
+}
+
+export function updateRepairProbDisplay(val) {
+  const pct = Math.round(parseFloat(val) * 100);
+  const badge = $('q-repair-prob-val');
+  if (badge) badge.textContent = `${pct}%`;
+}
+
+export function onWarrantyStatusChange() {
+  const stat = $('q-warranty-status').value;
+  const eligibleCheckbox = $('q-verified-warranty-eligible');
+  if (stat === 'expired' || stat === 'none') {
+    eligibleCheckbox.checked = false;
+  } else if (stat === 'active') {
+    eligibleCheckbox.checked = true;
+  }
+}
+
+export function onSafetyHazardToggle() {
+  const hazard = $('q-safety-hazard').checked;
+  const card = $('hazard-box-card');
+  if (card) {
+    if (hazard) {
+      card.style.background = 'rgba(255, 92, 114, 0.2)';
+      card.style.borderColor = 'var(--accent-danger)';
+    } else {
+      card.style.background = 'rgba(255, 92, 114, 0.08)';
+      card.style.borderColor = 'rgba(255, 92, 114, 0.45)';
+    }
+  }
+}
+
+export const QUESTIONNAIRE_PRESETS = {
+  'preset-phone-cracked': {
+    product_name: 'Flagship Smartphone 15 Pro 256GB',
+    product_id: 'SKU-PHONE-15PRO',
+    category: 'Smartphone',
+    purchase_price: 1199.00,
+    customer_id: 'CUST-9012',
+    order_id: 'ORD-2024-8841',
+    return_reason: 'Screen shattered on concrete; touchscreen erratic',
+    product_condition: 'defective',
+    defect_category: 'functional',
+    visible_damage: true,
+    defect_description: 'OLED front glass shattered, touch digitizer erratic, rear glass intact, boots up normally',
+    warranty_status: 'expired',
+    verified_warranty_eligible: false,
+    purchase_date: '2023-09-25',
+    warranty_expiry_date: '2024-09-25',
+    proof_verified: true,
+    assessor_notes: 'High-value flagship; screen replacement restores 90% cosmetic value',
+    safety_hazard: false,
+    authenticity_risk: 0.05,
+    fraud_flags: [],
+    repair_probability: 0.90,
+    estimated_repair_cost: 145.00,
+    estimated_repair_hours: 1.5,
+    potential_resale_value: 890.00,
+    parts_recovery_value: 320.00
+  },
+  'preset-laptop-battery': {
+    product_name: 'Precision Workstation Laptop 16"',
+    product_id: 'SKU-LAPTOP-WS16',
+    category: 'Laptop',
+    purchase_price: 2199.00,
+    customer_id: 'CUST-3144',
+    order_id: 'ORD-2024-7719',
+    return_reason: 'Trackpad bulging and bottom panel lifted',
+    product_condition: 'major_damage',
+    defect_category: 'electrical',
+    visible_damage: true,
+    defect_description: 'Severe lithium battery expansion bulging bottom chassis and pushing trackpad upwards',
+    warranty_status: 'active',
+    verified_warranty_eligible: true,
+    purchase_date: '2024-02-10',
+    warranty_expiry_date: '2025-02-10',
+    proof_verified: true,
+    assessor_notes: 'Thermal hazard! Swollen Li-ion cell requires isolation and hazardous review',
+    safety_hazard: true,
+    authenticity_risk: 0.05,
+    fraud_flags: [],
+    repair_probability: 0.40,
+    estimated_repair_cost: 480.00,
+    estimated_repair_hours: 3.5,
+    potential_resale_value: 1200.00,
+    parts_recovery_value: 550.00
+  },
+  'preset-earbuds-fake': {
+    product_name: 'Pro ANC True Wireless Earbuds',
+    product_id: 'SKU-EARBUDS-ANC',
+    category: 'Audio',
+    purchase_price: 249.00,
+    customer_id: 'CUST-4491',
+    order_id: 'ORD-2024-6623',
+    return_reason: 'Audio tinny, left earbud does not pair',
+    product_condition: 'minor_damage',
+    defect_category: 'functional',
+    visible_damage: false,
+    defect_description: 'Serial number on retail packaging mismatches laser engraving; counterfeit suspected',
+    warranty_status: 'unknown',
+    verified_warranty_eligible: false,
+    purchase_date: '2024-06-15',
+    warranty_expiry_date: '2025-06-15',
+    proof_verified: false,
+    assessor_notes: 'Suspicious lightweight plastics, mismatched serials, counterfeit replica clone',
+    safety_hazard: false,
+    authenticity_risk: 0.95,
+    fraud_flags: ['serial_mismatch', 'counterfeit_suspected'],
+    repair_probability: 0.10,
+    estimated_repair_cost: 80.00,
+    estimated_repair_hours: 1.0,
+    potential_resale_value: 0.00,
+    parts_recovery_value: 5.00
+  },
+  'preset-tv-warranty': {
+    product_name: '65-Inch Cinema OLED 4K Smart TV',
+    product_id: 'SKU-TV-65OLED',
+    category: 'Television',
+    purchase_price: 1799.00,
+    customer_id: 'CUST-7822',
+    order_id: 'ORD-2024-5511',
+    return_reason: 'Vertical green line through center of panel',
+    product_condition: 'defective',
+    defect_category: 'functional',
+    visible_damage: false,
+    defect_description: 'Factory OLED panel column driver defect; zero exterior impact marks',
+    warranty_status: 'active',
+    verified_warranty_eligible: true,
+    purchase_date: '2024-05-01',
+    warranty_expiry_date: '2025-05-01',
+    proof_verified: true,
+    assessor_notes: 'Within 1-year manufacturer warranty period, verified eligible for OEM warranty claim',
+    safety_hazard: false,
+    authenticity_risk: 0.02,
+    fraud_flags: [],
+    repair_probability: 0.35,
+    estimated_repair_cost: 650.00,
+    estimated_repair_hours: 2.0,
+    potential_resale_value: 1100.00,
+    parts_recovery_value: 350.00
+  },
+  'preset-watch-clean': {
+    product_name: 'Ultra GPS Multisport Fitness Watch',
+    product_id: 'SKU-WATCH-GPS',
+    category: 'Smartwatch',
+    purchase_price: 399.00,
+    customer_id: 'CUST-5518',
+    order_id: 'ORD-2024-4488',
+    return_reason: 'Customer changed mind; wanted different strap size',
+    product_condition: 'like_new',
+    defect_category: 'none',
+    visible_damage: false,
+    defect_description: 'Opened box, watch and all accessories untouched in factory plastic wrap, 100% operational',
+    warranty_status: 'active',
+    verified_warranty_eligible: true,
+    purchase_date: '2024-09-01',
+    warranty_expiry_date: '2025-09-01',
+    proof_verified: true,
+    assessor_notes: 'Pristine condition; eligible for immediate restock',
+    safety_hazard: false,
+    authenticity_risk: 0.00,
+    fraud_flags: [],
+    repair_probability: 1.00,
+    estimated_repair_cost: 0.00,
+    estimated_repair_hours: 0.25,
+    potential_resale_value: 360.00,
+    parts_recovery_value: 120.00
+  }
+};
+
+export function loadQuestionnairePreset(presetKey) {
+  if (!presetKey || !QUESTIONNAIRE_PRESETS[presetKey]) return;
+  const p = QUESTIONNAIRE_PRESETS[presetKey];
+
+  $('q-product-name').value = p.product_name;
+  $('q-product-id').value = p.product_id;
+  $('q-category').value = p.category;
+  $('q-purchase-price').value = p.purchase_price;
+  $('q-customer-id').value = p.customer_id;
+  $('q-order-id').value = p.order_id || '';
+  $('q-return-reason').value = p.return_reason || '';
+
+  const condRadios = document.querySelectorAll('input[name="q-product-condition"]');
+  condRadios.forEach(r => { r.checked = (r.value === p.product_condition); });
+
+  $('q-defect-category').value = p.defect_category;
+  $('q-visible-damage').checked = !!p.visible_damage;
+  $('q-defect-description').value = p.defect_description || '';
+
+  $('q-warranty-status').value = p.warranty_status;
+  $('q-verified-warranty-eligible').checked = !!p.verified_warranty_eligible;
+  $('q-purchase-date').value = p.purchase_date || '';
+  $('q-warranty-expiry').value = p.warranty_expiry_date || '';
+  $('q-proof-verified').checked = !!p.proof_verified;
+  $('q-assessor-notes').value = p.assessor_notes || '';
+
+  $('q-safety-hazard').checked = !!p.safety_hazard;
+  onSafetyHazardToggle();
+
+  $('q-authenticity-risk').value = p.authenticity_risk;
+  updateAuthRiskDisplay(p.authenticity_risk);
+
+  const fraudBoxes = document.querySelectorAll('input[name="q-fraud-flag"]');
+  fraudBoxes.forEach(b => {
+    b.checked = (p.fraud_flags || []).includes(b.value);
+  });
+
+  $('q-repair-probability').value = p.repair_probability;
+  updateRepairProbDisplay(p.repair_probability);
+  $('q-repair-cost').value = p.estimated_repair_cost;
+  $('q-repair-hours').value = p.estimated_repair_hours;
+  $('q-resale-value').value = p.potential_resale_value;
+  $('q-parts-value').value = p.parts_recovery_value;
+
+  toast(`Loaded Preset: ${p.product_name}`, 'info');
+  goToQuestionnaireStep(1);
+}
+
+export function resetQuestionnaire() {
+  const form = $('questionnaire-form');
+  if (form) form.reset();
+  $('q-preset-selector').value = '';
+  updateAuthRiskDisplay(0.05);
+  updateRepairProbDisplay(0.85);
+  onSafetyHazardToggle();
+  $('q-decision-result').style.display = 'none';
+  goToQuestionnaireStep(1);
+  toast('Questionnaire reset to default values', 'info');
+}
+
+export async function submitQuestionnaire(e) {
+  if (e) e.preventDefault();
+
+  try {
+    showLoading('Submitting return & running optimization...');
+
+    const prodName = $('q-product-name').value.trim();
+    const prodId = $('q-product-id').value.trim();
+    const category = $('q-category').value;
+    const purchasePrice = parseFloat($('q-purchase-price').value) || 0;
+    const customerId = $('q-customer-id').value.trim();
+    const orderId = $('q-order-id').value.trim() || null;
+    const returnReason = $('q-return-reason').value.trim() || null;
+
+    if (!prodName || !prodId || !customerId) {
+      throw new Error('Please fill all required product and customer fields.');
+    }
+
+    const returnPayload = {
+      product_id: prodId,
+      product_name: prodName,
+      category: category,
+      purchase_price: purchasePrice,
+      currency: 'USD',
+      customer_id: customerId,
+      order_id: orderId,
+      return_reason: returnReason
+    };
+
+    let condition = 'defective';
+    const condSelected = document.querySelector('input[name="q-product-condition"]:checked');
+    if (condSelected) condition = condSelected.value;
+
+    const defectCategory = $('q-defect-category').value;
+    const visibleDamage = $('q-visible-damage').checked;
+    const defectDesc = $('q-defect-description').value.trim() || null;
+
+    const warrantyStatus = $('q-warranty-status').value;
+    const verifiedWarrantyEligible = $('q-verified-warranty-eligible').checked;
+    const purchaseDate = $('q-purchase-date').value || null;
+    const warrantyExpiry = $('q-warranty-expiry').value || null;
+    const proofVerified = $('q-proof-verified').checked;
+    const assessorNotes = $('q-assessor-notes').value.trim() || null;
+
+    const safetyHazard = $('q-safety-hazard').checked;
+    const authRisk = parseFloat($('q-authenticity-risk').value) || 0.0;
+    const fraudFlags = Array.from(document.querySelectorAll('input[name="q-fraud-flag"]:checked')).map(b => b.value);
+
+    const repairProb = parseFloat($('q-repair-probability').value) || 0.0;
+    const repairCost = parseFloat($('q-repair-cost').value) || 0.0;
+    const repairHours = parseFloat($('q-repair-hours').value) || 0.0;
+    const resaleValue = parseFloat($('q-resale-value').value) || 0.0;
+    const partsValue = parseFloat($('q-parts-value').value) || 0.0;
+
+    // a) Register Return
+    const returnRecord = await API.createReturn(returnPayload);
+    const returnId = returnRecord.id;
+
+    // b) Submit Assessment
+    const assessmentPayload = {
+      return_id: returnId,
+      product_condition: condition,
+      defect_category: defectCategory,
+      defect_description: defectDesc,
+      visible_damage: visibleDamage,
+      warranty_status: warrantyStatus,
+      purchase_date: purchaseDate,
+      warranty_expiry_date: warrantyExpiry,
+      verified_warranty_eligible: verifiedWarrantyEligible,
+      proof_of_purchase_metadata: { verified: proofVerified },
+      fraud_risk_score: authRisk,
+      fraud_flags: fraudFlags,
+      assessor_notes: assessorNotes,
+      repair_probability: repairProb,
+      estimated_repair_cost: repairCost,
+      estimated_repair_hours: repairHours,
+      potential_resale_value: resaleValue,
+      parts_recovery_value: partsValue,
+      authenticity_risk: authRisk,
+      safety_hazard: safetyHazard
+    };
+
+    await API.submitAssessment(assessmentPayload);
+
+    // c) Evaluate Decision
+    const decisionResponse = await API.getDecision(returnId);
+
+    // Refresh state in background
+    await refresh();
+
+    // Render result
+    renderQuestionnaireDecision(decisionResponse, returnRecord, assessmentPayload);
+
+    toast(`Assessment complete! Disposition: ${decisionResponse.recommended_route.toUpperCase()}`, 'success');
+
+  } catch (err) {
+    console.error('Questionnaire submission failed:', err);
+    toast(`Assessment submission failed: ${err.message}`, 'error');
+  } finally {
+    hideLoading();
+  }
+}
+
+function renderQuestionnaireDecision(dec, ret, asm) {
+  const container = $('q-decision-result');
+  if (!container) return;
+
+  const routeName = (dec.recommended_route || dec.recommended_action || 'unknown').toUpperCase();
+  const routeCls = (dec.recommended_route || '').toLowerCase().replace(/_/g, '-');
+  const netRecovery = dec.expected_net_recovery;
+  const originalPrice = ret.purchase_price || 1;
+  const recoveryPct = ((netRecovery / originalPrice) * 100).toFixed(1);
+  const confPct = Math.round((dec.confidence_score || 0.85) * 100);
+
+  const isHold = dec.manual_review_required || asm.safety_hazard || (asm.authenticity_risk >= 0.7);
+
+  let alertBannerHtml = '';
+  if (asm.safety_hazard) {
+    alertBannerHtml = `
+      <div class="q-result-alert-box">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <div>
+          <h4>CRITICAL HAZARD INTERVENTION TRIGGERED</h4>
+          <p>Swollen battery / thermal danger flagged by technician. Automated refurbishment locked out. Unit isolated for hazardous review and certified recycling.</p>
+        </div>
+      </div>
+    `;
+  } else if (asm.authenticity_risk >= 0.7 || (asm.fraud_flags && asm.fraud_flags.length > 0)) {
+    alertBannerHtml = `
+      <div class="q-result-alert-box" style="background: rgba(245, 166, 35, 0.12); border-color: var(--accent-warning);">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-warning);"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <div>
+          <h4 style="color: var(--accent-warning);">FRAUD &amp; COUNTERFEIT DETECTION ALERT</h4>
+          <p>High authenticity risk (${(asm.authenticity_risk * 100).toFixed(0)}%) or serial anomaly detected: ${asm.fraud_flags.join(', ') || 'Counterfeit suspect'}. Escrow hold active.</p>
+        </div>
+      </div>
+    `;
+  }
+
+  const altRoutes = dec.alternative_routes || [];
+  const altRowsHtml = altRoutes.map(r => {
+    const isSelected = r.route.toLowerCase() === (dec.recommended_route || '').toLowerCase();
+    const isFeasible = r.feasible;
+    const rName = r.route.toUpperCase().replace(/_/g, ' ');
+    const recNet = r.expected_net_recovery;
+    const rCost = r.route_costs != null ? r.route_costs : r.cost;
+    const rProc = r.expected_recovered_value != null ? r.expected_recovered_value : r.proceeds;
+
+    return `
+      <tr class="${isSelected ? 'selected-route-row' : ''}">
+        <td>
+          <strong>${rName}</strong>
+          ${isSelected ? ' <span class="badge badge-primary" style="font-size:0.68rem; margin-left:4px;">OPTIMAL</span>' : ''}
+        </td>
+        <td>
+          <span class="badge badge-${isFeasible ? 'active' : 'inactive'}">
+            ${isFeasible ? 'Feasible' : 'Ineligible'}
+          </span>
+        </td>
+        <td>${rProc != null ? fmt(rProc) : '-'}</td>
+        <td>${rCost != null ? fmt(rCost) : '-'}</td>
+        <td><strong>${recNet != null ? fmt(recNet) : '-'}</strong></td>
+        <td><small class="text-secondary">${r.feasibility_note || (isSelected ? 'Optimal route chosen' : 'Inferior return')}</small></td>
+      </tr>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="q-result-card">
+      <div class="q-result-hero">
+        <div class="q-result-hero-left">
+          <h2>
+            <span>Engine Decision:</span>
+            <span class="route-chip route-${routeCls}" style="font-size: 1.15rem; padding: 6px 16px;">
+              ${routeName}
+            </span>
+          </h2>
+          <p>Evaluated Return ID: <code>${ret.id}</code> &bull; Product: <strong>${ret.product_name}</strong> &bull; Category: ${ret.category}</p>
+        </div>
+        <div>
+          <span class="badge ${isHold ? 'badge-alert' : 'badge-active'}" style="font-size: 0.85rem; padding: 6px 14px;">
+            ${isHold ? 'HELD FOR MANUAL REVIEW' : 'AUTOMATED CLEARANCE'}
+          </span>
+        </div>
+      </div>
+
+      ${alertBannerHtml}
+
+      <div class="q-result-kpi-grid">
+        <div class="q-result-kpi-card">
+          <span class="q-result-kpi-label">Expected Net Recovery</span>
+          <span class="q-result-kpi-val" style="color: var(--accent-success);">${fmt(netRecovery)}</span>
+          <span class="q-result-kpi-sub">Net after all processing fees</span>
+        </div>
+        <div class="q-result-kpi-card">
+          <span class="q-result-kpi-label">Recovery Rate</span>
+          <span class="q-result-kpi-val">${recoveryPct}%</span>
+          <span class="q-result-kpi-sub">Of original ${fmt(originalPrice)} price</span>
+        </div>
+        <div class="q-result-kpi-card">
+          <span class="q-result-kpi-label">Decision Confidence</span>
+          <span class="q-result-kpi-val">${confPct}%</span>
+          <span class="q-result-kpi-sub">Engine statistical certainty</span>
+        </div>
+        <div class="q-result-kpi-card">
+          <span class="q-result-kpi-label">Repair Incremental Benefit</span>
+          <span class="q-result-kpi-val">${dec.repair_incremental_benefit ? fmt(dec.repair_incremental_benefit) : '$0.00'}</span>
+          <span class="q-result-kpi-sub">Advantage vs next best route</span>
+        </div>
+      </div>
+
+      <div class="q-rationale-box">
+        <h4>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+          Decision Engine Audit Trail &amp; Rationale
+        </h4>
+        <p>${dec.explanation || 'Optimal route selected based on comprehensive expected net recovery optimization across all available reverse channels.'}</p>
+      </div>
+
+      <div class="q-routes-section">
+        <h4>All 7 Route Economics &amp; Feasibility Breakdown</h4>
+        <div class="q-routes-table-wrap">
+          <table class="q-routes-table">
+            <thead>
+              <tr>
+                <th>Route</th>
+                <th>Status</th>
+                <th>Expected Proceeds</th>
+                <th>Route Cost</th>
+                <th>Net Recovery</th>
+                <th>Feasibility Note</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${altRowsHtml}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="q-result-actions">
+        <button class="btn btn-primary" onclick="App.openDeviceDetail('${ret.id}')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Deep Dive Device Economics
+        </button>
+        <button class="btn btn-secondary" onclick="App.switchTab('inventory')">
+          View in Return Inventory
+        </button>
+        <button class="btn btn-secondary" onclick="App.resetQuestionnaire()">
+          Assess Another Return
+        </button>
+      </div>
+    </div>
+  `;
+
+  container.style.display = 'block';
+  container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 window.App = {
   setCurrency,
   switchTab,
@@ -1235,7 +1760,15 @@ window.App = {
   runScenario,
   resetSimulator,
   runPresetK2,
-  simulateReviewAction
+  simulateReviewAction,
+  goToQuestionnaireStep,
+  loadQuestionnairePreset,
+  resetQuestionnaire,
+  updateAuthRiskDisplay,
+  updateRepairProbDisplay,
+  onWarrantyStatusChange,
+  onSafetyHazardToggle,
+  submitQuestionnaire
 };
 
 // AUTO-BOOT

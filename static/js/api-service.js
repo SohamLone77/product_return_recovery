@@ -112,6 +112,14 @@ export async function getAssessment(return_id) {
   }
 }
 
+export async function createReturn(payload) {
+  if (_adapterMode) {
+    const id = `ret_${Date.now().toString(16)}`;
+    return { id, ...payload, status: 'registered' };
+  }
+  return await apiPost('/returns', payload);
+}
+
 export async function submitAssessment(payload) {
   if (_adapterMode) return SYNTHETIC_ADAPTER.submitAssessment(payload);
   return await apiPost('/assessment', payload);
