@@ -62,3 +62,27 @@ def submit_assessment(
     db.commit()
     db.refresh(assessment)
     return assessment
+
+
+@router.get(
+    "/{return_id}",
+    response_model=AssessmentResponse,
+    summary="Get return physical assessment by return ID",
+    description="Retrieves the latest physical assessment record for the specified return ID."
+)
+def get_assessment(
+    return_id: str,
+    db: Session = Depends(get_db)
+):
+    assessment = (
+        db.query(AssessmentRecord)
+        .filter(AssessmentRecord.return_id == return_id)
+        .order_by(AssessmentRecord.created_at.desc())
+        .first()
+    )
+    if not assessment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Assessment for return ID '{return_id}' not found."
+        )
+    return assessment
