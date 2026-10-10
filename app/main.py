@@ -19,6 +19,8 @@ async def lifespan(app: FastAPI):
     # Initialize database tables on startup
     logger.info("Initializing database schema...")
     Base.metadata.create_all(bind=engine)
+    from app.database import ensure_schema_migrations
+    ensure_schema_migrations(engine)
     logger.info("Database schema initialized successfully.")
     yield
 
