@@ -12,7 +12,7 @@ router = APIRouter(prefix="/assessment", tags=["Assessment"])
     response_model=AssessmentResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Submit return physical assessment",
-    description="Validates product condition, defect classification, and warranty eligibility. Links assessment directly to the referenced return record."
+    description="Validates product condition, defect classification, warranty eligibility, and engineering parameters. Links assessment directly to the referenced return record."
 )
 def submit_assessment(
     payload: AssessmentCreate,
@@ -44,6 +44,13 @@ def submit_assessment(
         fraud_risk_score=payload.fraud_risk_score,
         fraud_flags=payload.fraud_flags,
         assessor_notes=payload.assessor_notes,
+        repair_probability=payload.repair_probability,
+        estimated_repair_cost=payload.estimated_repair_cost,
+        estimated_repair_hours=payload.estimated_repair_hours,
+        potential_resale_value=payload.potential_resale_value,
+        parts_recovery_value=payload.parts_recovery_value,
+        authenticity_risk=payload.authenticity_risk,
+        safety_hazard=payload.safety_hazard,
     )
 
     db.add(assessment)
